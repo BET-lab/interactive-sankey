@@ -32,7 +32,7 @@
         "dependencies": [
           "2"
         ],
-        "details": "- d3-sankey 플러그인 로드\n- JSON 데이터 읽기 기능 구현\n- 기본 노드와 링크 렌더링\n- SVG 컨테이너 설정\n- d3-sankey 데이터 포맷 문제 해결 중",
+        "details": "- d3-sankey 플러그인 로드 ✅\n- JSON 데이터 읽기 기능 구현 ✅\n- 기본 노드와 링크 렌더링 ✅\n- SVG 컨테이너 설정 ✅\n- d3-sankey 데이터 포맷 문제 해결 완료 ✅\n\n**Bug Fixes Completed:**\n1. 링크가 안보임 문제 해결 - Progressive disclosure 로직 개선으로 초기 노드들 간 링크 자동 표시\n2. 노드 클릭 시 떨림 문제 해결 - 애니메이션 중 이벤트 처리 개선 및 CSS hover 효과 제거\n\n**Current Status:** 모든 핵심 기능 구현 완료. 다음 태스크로 진행 가능.",
         "testStrategy": "기본 Sankey 다이어그램이 화면에 표시되는지 확인"
       },
       {

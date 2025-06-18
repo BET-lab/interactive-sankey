@@ -125,9 +125,7 @@
             transition: all 0.3s ease;
         }
 
-        .node:hover {
-            transform: scale(1.05);
-        }
+        /* Remove hover transform to prevent jittering */
 
         .node-rect {
             fill: #4a90e2;
@@ -155,9 +153,7 @@
             transition: all 0.3s ease;
         }
 
-        .link:hover {
-            stroke-opacity: 1;
-        }
+        /* Link hover handled via JavaScript to prevent conflicts */
 
         .link-hidden {
             opacity: 0;
@@ -295,6 +291,7 @@
         let visibleNodes = new Set();
         let visibleLinks = new Set();
         let animationDuration = 500;
+        let isAnimating = false;
 
         // Configuration object for customization
         const config = {
@@ -499,12 +496,16 @@
                     return linkData ? !linkData.visible : true;
                 })
                 .on('mouseover', function(event, d) {
-                    d3.select(this).attr('stroke-opacity', 1);
-                    showTooltip(event, d, 'link');
+                    if (!isAnimating) {
+                        d3.select(this).attr('stroke-opacity', 1);
+                        showTooltip(event, d, 'link');
+                    }
                 })
                 .on('mouseout', function(event, d) {
-                    d3.select(this).attr('stroke-opacity', config.linkOpacity);
-                    hideTooltip();
+                    if (!isAnimating) {
+                        d3.select(this).attr('stroke-opacity', config.linkOpacity);
+                        hideTooltip();
+                    }
                 });
         }
 
@@ -523,13 +524,20 @@
                     return nodeData ? !nodeData.visible : true;
                 })
                 .on('click', function(event, d) {
-                    revealConnectedNodes(d.id);
+                    event.stopPropagation();
+                    if (!isAnimating) {
+                        revealConnectedNodes(d.id);
+                    }
                 })
                 .on('mouseover', function(event, d) {
-                    showTooltip(event, d, 'node');
+                    if (!isAnimating && visibleNodes.has(d.id)) {
+                        showTooltip(event, d, 'node');
+                    }
                 })
                 .on('mouseout', function(event, d) {
-                    hideTooltip();
+                    if (!isAnimating) {
+                        hideTooltip();
+                    }
                 });
 
             // Add rectangles
@@ -579,6 +587,17 @@
 
             sankeyData.interactionRules.initiallyVisible.forEach(nodeId => {
                 visibleNodes.add(nodeId);
+                
+                // Also add any links connected to initially visible nodes
+                sankeyData.links.forEach(link => {
+                    if (link.source === nodeId || link.target === nodeId) {
+                        // Check if the other end of the link should also be visible
+                        const otherNodeId = link.source === nodeId ? link.target : link.source;
+                        if (sankeyData.interactionRules.initiallyVisible.includes(otherNodeId)) {
+                            visibleLinks.add(link.id);
+                        }
+                    }
+                });
             });
 
             updateVisibility();
@@ -627,14 +646,13 @@
             // Add connected nodes to visible set
             connectedNodeIds.forEach(id => {
                 visibleNodes.add(id);
-                
-                // Find and add connecting links
-                sankeyData.links.forEach(link => {
-                    if ((link.source === nodeId && link.target === id) ||
-                        (link.target === nodeId && link.source === id)) {
-                        visibleLinks.add(link.id);
-                    }
-                });
+            });
+            
+            // Add all links between any visible nodes
+            sankeyData.links.forEach(link => {
+                if (visibleNodes.has(link.source) && visibleNodes.has(link.target)) {
+                    visibleLinks.add(link.id);
+                }
             });
 
             updateVisibility();
@@ -644,14 +662,16 @@
         function updateVisibility() {
             if (!nodes || !links) return;
 
+            isAnimating = true;
+
             // Update node visibility
-            nodes.transition()
+            const nodeTransition = nodes.transition()
                 .duration(animationDuration)
                 .style('opacity', d => visibleNodes.has(d.id) ? 1 : 0.1)
                 .style('pointer-events', d => visibleNodes.has(d.id) ? 'all' : 'none');
 
             // Update link visibility
-            links.transition()
+            const linkTransition = links.transition()
                 .duration(animationDuration)
                 .style('opacity', d => {
                     const sourceId = sankeyData.nodes[d.source.index || d.source]?.id;
@@ -670,6 +690,15 @@
                     );
                     if (!linkData) return 'none';
                     return visibleLinks.has(linkData.id) ? 'all' : 'none';
+                });
+
+            // Reset animation flag when both transitions complete
+            Promise.all([nodeTransition.end(), linkTransition.end()])
+                .then(() => {
+                    isAnimating = false;
+                })
+                .catch(() => {
+                    isAnimating = false;
                 });
         }
 
