@@ -136,6 +136,26 @@
             transition: all 0.3s ease;
         }
 
+        .node.draggable {
+            cursor: grab;
+        }
+
+        .node:hover .node-circle {
+            stroke-width: 4;
+            filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.4));
+        }
+
+        .node.dragging {
+            cursor: grabbing !important;
+            transition: none !important; /* Disable transitions during drag */
+        }
+
+        .node.dragging .node-circle {
+            stroke-width: 5;
+            filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.5));
+            transition: none !important; /* Disable transitions during drag */
+        }
+
         /* Remove hover transform to prevent jittering */
 
         .node-circle {
@@ -279,6 +299,9 @@
                         <input type="checkbox" id="coordinateMode" checked>
                         Use Absolute Coordinates
                     </label>
+                    <small style="color: rgba(0,0,0,0.6); font-size: 0.8rem; margin-top: 2px;">
+                        Enable node dragging
+                    </small>
                 </div>
             </div>
         </div>
@@ -306,6 +329,11 @@
         // Animation state
         let isAnimating = false;
         const animationDuration = config.animationDuration;
+
+        // Drag state
+        let isDragging = false;
+        let draggedNode = null;
+        let dragOffset = { x: 0, y: 0 };
 
         // Progressive disclosure state
         const visibleNodes = new Set();
@@ -354,6 +382,10 @@
             document.getElementById('coordinateMode').addEventListener('change', function(e) {
                 config.useAbsoluteCoordinates = e.target.checked;
                 updateDiagram();
+                // Update draggable state immediately for better UX
+                setTimeout(() => {
+                    updateDraggableNodes();
+                }, 100);
             });
         }
 
@@ -666,22 +698,30 @@
                     const nodeData = sankeyData.nodes.find(node => node.id === d.id);
                     return nodeData ? !nodeData.visible : true;
                 })
+                .classed('draggable', d => {
+                    return config.useAbsoluteCoordinates && visibleNodes.has(d.id);
+                })
                 .on('click', function(event, d) {
                     event.stopPropagation();
-                    if (!isAnimating) {
+                    if (!isAnimating && !isDragging) {
                         revealConnectedNodes(d.id);
                     }
                 })
                 .on('mouseover', function(event, d) {
-                    if (!isAnimating && visibleNodes.has(d.id)) {
+                    if (!isAnimating && !isDragging && visibleNodes.has(d.id)) {
                         // showTooltip(event, d, 'node'); // Temporarily disabled
                     }
                 })
                 .on('mouseout', function(event, d) {
-                    if (!isAnimating) {
+                    if (!isAnimating && !isDragging) {
                         // hideTooltip(); // Temporarily disabled
                     }
-                });
+                })
+                .call(d3.drag()
+                    .on('start', dragStarted)
+                    .on('drag', dragged)
+                    .on('end', dragEnded)
+                );
 
             // Add circular nodes instead of rectangles
             const nodeRadius = 30; // Fixed radius for circular nodes (should match sankey layout)
@@ -782,6 +822,15 @@
             if (!links) return;
             
             links.attr('opacity', config.linkOpacity);
+        }
+
+        // Update draggable state of nodes
+        function updateDraggableNodes() {
+            if (!nodes) return;
+            
+            nodes.classed('draggable', d => {
+                return config.useAbsoluteCoordinates && visibleNodes.has(d.id);
+            });
         }
 
         // Progressive disclosure functionality
@@ -892,9 +941,12 @@
             Promise.all([nodeTransition.end(), linkTransition.end()])
                 .then(() => {
                     isAnimating = false;
+                    // Update draggable state after visibility changes
+                    updateDraggableNodes();
                 })
                 .catch(() => {
                     isAnimating = false;
+                    updateDraggableNodes();
                 });
         }
 
@@ -948,6 +1000,118 @@
 
         function hideTooltip() {
             d3.selectAll('.tooltip').remove();
+        }
+
+        // Drag event handlers
+        function dragStarted(event, d) {
+            // Only allow dragging in absolute coordinate mode
+            if (!config.useAbsoluteCoordinates) {
+                return;
+            }
+            
+            // Only allow dragging visible nodes
+            if (!visibleNodes.has(d.id)) {
+                return;
+            }
+
+            isDragging = true;
+            draggedNode = d;
+            
+            // Get the main SVG group for coordinate transformation
+            const mainGroup = svg.select('g').node();
+            
+            // Get mouse position relative to the main group
+            const [mouseX, mouseY] = d3.pointer(event, mainGroup);
+            
+            // Calculate offset between mouse and node center
+            const nodeCenterX = d.x0 + 30; // node radius = 30
+            const nodeCenterY = d.y0 + 30;
+            
+            dragOffset.x = mouseX - nodeCenterX;
+            dragOffset.y = mouseY - nodeCenterY;
+            
+            // Add visual feedback
+            d3.select(this).classed('dragging', true);
+            console.log(`Started dragging node: ${d.id} at (${d.x0}, ${d.y0})`);
+        }
+
+        function dragged(event, d) {
+            if (!isDragging || !config.useAbsoluteCoordinates || !visibleNodes.has(d.id)) {
+                return;
+            }
+
+            // Get the main SVG group for coordinate transformation
+            const mainGroup = svg.select('g').node();
+            
+            // Get mouse position relative to the main group (this gives us accurate SVG coordinates)
+            const [mouseX, mouseY] = d3.pointer(event, mainGroup);
+
+            // Calculate new node position considering the initial offset
+            const newCenterX = mouseX - dragOffset.x;
+            const newCenterY = mouseY - dragOffset.y;
+            
+            // Convert center position to top-left corner (d.x0, d.y0)
+            const newX = newCenterX - 30; // node radius = 30
+            const newY = newCenterY - 30;
+
+            // Get SVG dimensions to constrain movement
+            const container = document.getElementById('sankey-diagram');
+            const rect = container.getBoundingClientRect();
+            const margin = { left: 40, right: 40, top: 20, bottom: 20 };
+            const width = rect.width - margin.left - margin.right;
+            const height = rect.height - margin.top - margin.bottom;
+            const nodeRadius = 30;
+
+            // Constrain to SVG bounds (considering node radius)
+            const constrainedX = Math.max(0, Math.min(width - 60, newX));
+            const constrainedY = Math.max(0, Math.min(height - 60, newY));
+
+            // Update node data immediately
+            d.x0 = constrainedX;
+            d.x1 = constrainedX + 60;
+            d.y0 = constrainedY;
+            d.y1 = constrainedY + 60;
+
+            // Update visual position immediately without transition
+            d3.select(this)
+                .interrupt() // Stop any ongoing transitions
+                .attr('transform', `translate(${d.x0},${d.y0})`);
+
+            // Update links in real-time
+            updateLinksPosition();
+        }
+
+        function dragEnded(event, d) {
+            if (!isDragging || !config.useAbsoluteCoordinates) {
+                return;
+            }
+
+            isDragging = false;
+            draggedNode = null;
+            
+            // Remove visual feedback
+            d3.select(this).classed('dragging', false);
+
+            // Update the original data with new coordinates
+            const originalNode = sankeyData.nodes.find(node => node.id === d.id);
+            if (originalNode) {
+                originalNode.x = d.x0;
+                originalNode.y = d.y0;
+                console.log(`Updated node ${d.id} coordinates: (${d.x0}, ${d.y0})`);
+            }
+
+            // Final link update
+            updateLinksPosition();
+        }
+
+        // Update link positions during drag
+        function updateLinksPosition() {
+            if (!links) return;
+
+            // Update links immediately without transition for smooth dragging
+            links
+                .interrupt() // Stop any ongoing transitions
+                .attr('d', createVariableWidthLink);
         }
 
         // Window resize handler
