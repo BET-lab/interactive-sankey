@@ -1,0 +1,399 @@
+{
+  "metadata": {
+    "title": "Sample Interactive Sankey Data",
+    "description": "Multi-level flow data for progressive disclosure",
+    "version": "1.0",
+    "created": "2025-01-12"
+  },
+  "config": {
+    "defaultNodeStyle": {
+      "width": 20,
+      "height": 80,
+      "color": "#4a90e2",
+      "strokeColor": "#2c5aa0",
+      "strokeWidth": 2,
+      "borderRadius": 8
+    },
+    "defaultLinkStyle": {
+      "opacity": 0.7,
+      "gradient": {
+        "start": "#667eea",
+        "end": "#764ba2"
+      }
+    },
+    "layout": {
+      "levelSpacing": 200,
+      "nodeSpacing": 10,
+      "padding": 20
+    }
+  },
+  "nodes": [
+    {
+      "id": "energy_sources",
+      "name": "Energy Sources",
+      "level": 0,
+      "x": 50,
+      "style": {
+        "color": "#e74c3c",
+        "icon": "<svg viewBox='0 0 24 24' width='20' height='20'><path d='M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z' fill='white'/></svg>"
+      },
+      "visible": true,
+      "description": "Primary energy sources"
+    },
+    {
+      "id": "coal",
+      "name": "Coal",
+      "level": 1,
+      "x": 250,
+      "style": {
+        "color": "#2c3e50",
+        "icon": "<svg viewBox='0 0 24 24' width='20' height='20'><circle cx='12' cy='12' r='8' fill='white'/></svg>"
+      },
+      "visible": false,
+      "parentNodes": ["energy_sources"],
+      "description": "Coal power generation"
+    },
+    {
+      "id": "natural_gas",
+      "name": "Natural Gas",
+      "level": 1,
+      "x": 250,
+      "style": {
+        "color": "#3498db",
+        "icon": "<svg viewBox='0 0 24 24' width='20' height='20'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z' fill='white'/></svg>"
+      },
+      "visible": false,
+      "parentNodes": ["energy_sources"],
+      "description": "Natural gas power generation"
+    },
+    {
+      "id": "renewables",
+      "name": "Renewables",
+      "level": 1,
+      "x": 250,
+      "style": {
+        "color": "#27ae60",
+        "icon": "<svg viewBox='0 0 24 24' width='20' height='20'><path d='M12 2l-5.5 9h11z' fill='white'/><circle cx='12' cy='16' r='4' fill='white'/></svg>"
+      },
+      "visible": false,
+      "parentNodes": ["energy_sources"],
+      "description": "Renewable energy sources"
+    },
+    {
+      "id": "solar",
+      "name": "Solar",
+      "level": 2,
+      "x": 450,
+      "style": {
+        "color": "#f39c12",
+        "icon": "<svg viewBox='0 0 24 24' width='20' height='20'><circle cx='12' cy='12' r='4' fill='white'/><path d='M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42' stroke='white' stroke-width='2'/></svg>"
+      },
+      "visible": false,
+      "parentNodes": ["renewables"],
+      "description": "Solar power generation"
+    },
+    {
+      "id": "wind",
+      "name": "Wind",
+      "level": 2,
+      "x": 450,
+      "style": {
+        "color": "#16a085",
+        "icon": "<svg viewBox='0 0 24 24' width='20' height='20'><path d='M12 2L8 8h8l-4-6zM12 22l4-6H8l4 6zM2 12l6-4v8l-6-4zM22 12l-6-4v8l6-4z' fill='white'/></svg>"
+      },
+      "visible": false,
+      "parentNodes": ["renewables"],
+      "description": "Wind power generation"
+    },
+    {
+      "id": "hydro",
+      "name": "Hydro",
+      "level": 2,
+      "x": 450,
+      "style": {
+        "color": "#2980b9",
+        "icon": "<svg viewBox='0 0 24 24' width='20' height='20'><path d='M12 2C8 2 8 6 8 6s0 4 4 4 4-4 4-4S16 2 12 2zM8 14c-2 0-2 2 0 2s2-2 0-2zM16 14c-2 0-2 2 0 2s2-2 0-2zM12 18c-3 0-3 3 0 3s3-3 0-3z' fill='white'/></svg>"
+      },
+      "visible": false,
+      "parentNodes": ["renewables"],
+      "description": "Hydroelectric power generation"
+    },
+    {
+      "id": "electricity_grid",
+      "name": "Electricity Grid",
+      "level": 2,
+      "x": 450,
+      "style": {
+        "color": "#8e44ad",
+        "icon": "<svg viewBox='0 0 24 24' width='20' height='20'><path d='M12 2L2 7v10c0 5.55 3.84 9.74 9 11 5.16-1.26 9-5.45 9-11V7l-10-5z' fill='white'/></svg>"
+      },
+      "visible": false,
+      "parentNodes": ["coal", "natural_gas", "renewables"],
+      "description": "Central electricity distribution"
+    },
+    {
+      "id": "residential",
+      "name": "Residential",
+      "level": 3,
+      "x": 650,
+      "style": {
+        "color": "#e67e22",
+        "icon": "<svg viewBox='0 0 24 24' width='20' height='20'><path d='M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z' fill='white'/></svg>"
+      },
+      "visible": false,
+      "parentNodes": ["electricity_grid"],
+      "description": "Residential electricity consumption"
+    },
+    {
+      "id": "commercial",
+      "name": "Commercial",
+      "level": 3,
+      "x": 650,
+      "style": {
+        "color": "#34495e",
+        "icon": "<svg viewBox='0 0 24 24' width='20' height='20'><path d='M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z' fill='white'/></svg>"
+      },
+      "visible": false,
+      "parentNodes": ["electricity_grid"],
+      "description": "Commercial electricity consumption"
+    },
+    {
+      "id": "industrial",
+      "name": "Industrial",
+      "level": 3,
+      "x": 650,
+      "style": {
+        "color": "#95a5a6",
+        "icon": "<svg viewBox='0 0 24 24' width='20' height='20'><path d='M12 2L2 7v10c0 5.55 3.84 9.74 9 11 5.16-1.26 9-5.45 9-11V7l-10-5z' fill='white'/><circle cx='12' cy='12' r='3' fill='#95a5a6'/></svg>"
+      },
+      "visible": false,
+      "parentNodes": ["electricity_grid"],
+      "description": "Industrial electricity consumption"
+    }
+  ],
+  "links": [
+    {
+      "id": "energy_to_coal",
+      "source": "energy_sources",
+      "target": "coal",
+      "value": 30,
+      "style": {
+        "gradient": {
+          "start": "#e74c3c",
+          "end": "#2c3e50"
+        },
+        "opacity": 0.7
+      },
+      "visible": false,
+      "description": "Coal from energy sources"
+    },
+    {
+      "id": "energy_to_gas",
+      "source": "energy_sources",
+      "target": "natural_gas",
+      "value": 25,
+      "style": {
+        "gradient": {
+          "start": "#e74c3c",
+          "end": "#3498db"
+        },
+        "opacity": 0.7
+      },
+      "visible": false,
+      "description": "Natural gas from energy sources"
+    },
+    {
+      "id": "energy_to_renewables",
+      "source": "energy_sources",
+      "target": "renewables",
+      "value": 45,
+      "style": {
+        "gradient": {
+          "start": "#e74c3c",
+          "end": "#27ae60"
+        },
+        "opacity": 0.7
+      },
+      "visible": false,
+      "description": "Renewables from energy sources"
+    },
+    {
+      "id": "renewables_to_solar",
+      "source": "renewables",
+      "target": "solar",
+      "value": 20,
+      "style": {
+        "gradient": {
+          "start": "#27ae60",
+          "end": "#f39c12"
+        },
+        "opacity": 0.7
+      },
+      "visible": false,
+      "description": "Solar from renewables"
+    },
+    {
+      "id": "renewables_to_wind",
+      "source": "renewables",
+      "target": "wind",
+      "value": 15,
+      "style": {
+        "gradient": {
+          "start": "#27ae60",
+          "end": "#16a085"
+        },
+        "opacity": 0.7
+      },
+      "visible": false,
+      "description": "Wind from renewables"
+    },
+    {
+      "id": "renewables_to_hydro",
+      "source": "renewables",
+      "target": "hydro",
+      "value": 10,
+      "style": {
+        "gradient": {
+          "start": "#27ae60",
+          "end": "#2980b9"
+        },
+        "opacity": 0.7
+      },
+      "visible": false,
+      "description": "Hydro from renewables"
+    },
+    {
+      "id": "coal_to_grid",
+      "source": "coal",
+      "target": "electricity_grid",
+      "value": 30,
+      "style": {
+        "gradient": {
+          "start": "#2c3e50",
+          "end": "#8e44ad"
+        },
+        "opacity": 0.7
+      },
+      "visible": false,
+      "description": "Coal to electricity grid"
+    },
+    {
+      "id": "gas_to_grid",
+      "source": "natural_gas",
+      "target": "electricity_grid",
+      "value": 25,
+      "style": {
+        "gradient": {
+          "start": "#3498db",
+          "end": "#8e44ad"
+        },
+        "opacity": 0.7
+      },
+      "visible": false,
+      "description": "Natural gas to electricity grid"
+    },
+    {
+      "id": "solar_to_grid",
+      "source": "solar",
+      "target": "electricity_grid",
+      "value": 20,
+      "style": {
+        "gradient": {
+          "start": "#f39c12",
+          "end": "#8e44ad"
+        },
+        "opacity": 0.7
+      },
+      "visible": false,
+      "description": "Solar to electricity grid"
+    },
+    {
+      "id": "wind_to_grid",
+      "source": "wind",
+      "target": "electricity_grid",
+      "value": 15,
+      "style": {
+        "gradient": {
+          "start": "#16a085",
+          "end": "#8e44ad"
+        },
+        "opacity": 0.7
+      },
+      "visible": false,
+      "description": "Wind to electricity grid"
+    },
+    {
+      "id": "hydro_to_grid",
+      "source": "hydro",
+      "target": "electricity_grid",
+      "value": 10,
+      "style": {
+        "gradient": {
+          "start": "#2980b9",
+          "end": "#8e44ad"
+        },
+        "opacity": 0.7
+      },
+      "visible": false,
+      "description": "Hydro to electricity grid"
+    },
+    {
+      "id": "grid_to_residential",
+      "source": "electricity_grid",
+      "target": "residential",
+      "value": 40,
+      "style": {
+        "gradient": {
+          "start": "#8e44ad",
+          "end": "#e67e22"
+        },
+        "opacity": 0.7
+      },
+      "visible": false,
+      "description": "Grid to residential"
+    },
+    {
+      "id": "grid_to_commercial",
+      "source": "electricity_grid",
+      "target": "commercial",
+      "value": 35,
+      "style": {
+        "gradient": {
+          "start": "#8e44ad",
+          "end": "#34495e"
+        },
+        "opacity": 0.7
+      },
+      "visible": false,
+      "description": "Grid to commercial"
+    },
+    {
+      "id": "grid_to_industrial",
+      "source": "electricity_grid",
+      "target": "industrial",
+      "value": 25,
+      "style": {
+        "gradient": {
+          "start": "#8e44ad",
+          "end": "#95a5a6"
+        },
+        "opacity": 0.7
+      },
+      "visible": false,
+      "description": "Grid to industrial"
+    }
+  ],
+  "interactionRules": {
+    "initiallyVisible": ["energy_sources"],
+    "progressiveDisclosure": {
+      "energy_sources": ["coal", "natural_gas", "renewables"],
+      "renewables": ["solar", "wind", "hydro"],
+      "coal": ["electricity_grid"],
+      "natural_gas": ["electricity_grid"],
+      "solar": ["electricity_grid"],
+      "wind": ["electricity_grid"],
+      "hydro": ["electricity_grid"],
+      "electricity_grid": ["residential", "commercial", "industrial"]
+    }
+  }
+} 

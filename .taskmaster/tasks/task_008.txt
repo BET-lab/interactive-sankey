@@ -1,0 +1,15 @@
+# Task ID: 8
+# Title: 최종 통합 테스트 및 성능 최적화
+# Status: pending
+# Dependencies: 7 (Not found)
+# Priority: medium
+# Description: 전체 시스템을 통합하여 테스트하고 성능을 최적화
+# Details:
+- 모든 기능 통합 테스트
+- 브라우저 호환성 확인
+- 성능 최적화
+- 코드 정리 및 주석 추가
+- 최종 검증
+
+# Test Strategy:
+완전한 Interactive Sankey 다이어그램이 모든 요구사항을 만족하는지 확인

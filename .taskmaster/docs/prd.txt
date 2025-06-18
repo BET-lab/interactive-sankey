@@ -1,0 +1,95 @@
+# Interactive Sankey Diagram Visualization Project
+
+## Project Overview
+Create an interactive Sankey diagram visualization as a single HTML file using D3.js library. The diagram will show flow relationships between nodes with interactive features and customizable styling.
+
+## Core Requirements
+
+### 1. Technical Architecture
+- Single HTML file containing all code (HTML, CSS, JavaScript)
+- Use D3.js library for visualization
+- Read data from local JSON file
+- No external server dependencies required
+
+### 2. Data Structure
+- Define JSON format for Sankey diagram data
+- Support nodes and links structure
+- Include metadata for styling and customization
+- Local file-based data loading
+
+### 3. Visual Design
+- Based on reference.png design
+- Nodes with SVG icons (placeholder SVG initially)
+- Gradient colors for flow ribbons between nodes
+- Modern, clean UI design
+- Responsive layout
+
+### 4. Interactive Features
+- Progressive disclosure: Initially show only leftmost nodes
+- Other nodes hidden or highly transparent
+- Click interaction on nodes to reveal connected nodes and flows
+- Smooth transitions and animations
+- Expandable navigation through node hierarchy
+
+### 5. Customization Features
+- Configurable node styles (colors, sizes, shapes)
+- Customizable ribbon/flow colors and gradients
+- Adjustable layout parameters
+- Flexible styling options
+
+### 6. User Experience
+- Intuitive click-to-explore navigation
+- Smooth animations and transitions
+- Clear visual hierarchy
+- Professional appearance
+
+## Technical Specifications
+
+### Data Format
+```json
+{
+  "nodes": [
+    {
+      "id": "node1",
+      "name": "Node Name",
+      "level": 0,
+      "style": {
+        "color": "#color",
+        "icon": "svg_path"
+      }
+    }
+  ],
+  "links": [
+    {
+      "source": "node1",
+      "target": "node2",
+      "value": 100,
+      "style": {
+        "gradient": ["#start", "#end"]
+      }
+    }
+  ]
+}
+```
+
+### Key Libraries
+- D3.js (latest version)
+- D3-Sankey plugin for layout calculations
+
+### Browser Support
+- Modern browsers with SVG and ES6 support
+- No IE support required
+
+## Deliverables
+1. Single HTML file with complete implementation
+2. Sample JSON data file
+3. Configurable styling system
+4. Interactive click-based navigation
+5. Smooth transitions and animations
+
+## Success Criteria
+- Displays Sankey diagram based on JSON data
+- Implements progressive disclosure interaction
+- Supports customizable styling
+- Runs without external dependencies
+- Matches reference design aesthetic 

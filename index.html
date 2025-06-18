@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Sankey Diagram</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 2rem;
+            font-weight: 300;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1rem;
+        }
+
+        .container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .controls h3 {
+            color: white;
+            margin-bottom: 15px;
+            font-weight: 400;
+        }
+
+        .control-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .control-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .control-item label {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .control-item input[type="range"],
+        .control-item input[type="color"],
+        .control-item select {
+            padding: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .control-item input[type="range"] {
+            width: 120px;
+        }
+
+        .control-item select {
+            min-width: 100px;
+        }
+
+        .control-item select option {
+            background: #333;
+            color: white;
+        }
+
+        .visualization-container {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+            position: relative;
+        }
+
+        #sankey-diagram {
+            width: 100%;
+            height: 100%;
+            min-height: 500px;
+        }
+
+        .node {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .node:hover {
+            transform: scale(1.05);
+        }
+
+        .node-rect {
+            fill: #4a90e2;
+            stroke: #2c5aa0;
+            stroke-width: 2;
+            rx: 8;
+            ry: 8;
+        }
+
+        .node-icon {
+            pointer-events: none;
+        }
+
+        .node-label {
+            font-size: 12px;
+            font-weight: 500;
+            fill: white;
+            text-anchor: middle;
+            pointer-events: none;
+        }
+
+        .link {
+            fill: none;
+            stroke-opacity: 0.7;
+            transition: all 0.3s ease;
+        }
+
+        .link:hover {
+            stroke-opacity: 1;
+        }
+
+        .link-hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .node-hidden {
+            opacity: 0.1;
+            pointer-events: none;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 1000;
+            max-width: 200px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .tooltip strong {
+            color: #4a90e2;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .error {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            color: #ff6b6b;
+            font-size: 1.2rem;
+            text-align: center;
+        }
+
+        .node-rect {
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+        }
+
+        .link {
+            cursor: pointer;
+        }
+
+        .links path {
+            mix-blend-mode: multiply;
+        }
+
+        @media (max-width: 768px) {
+            .control-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .control-item {
+                width: 100%;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Interactive Sankey Diagram</h1>
+        <p>Click on nodes to explore the flow relationships</p>
+    </div>
+
+    <div class="container">
+        <div class="controls">
+            <h3>Customization Controls</h3>
+            <div class="control-group">
+                <div class="control-item">
+                    <label for="nodeWidth">Node Width</label>
+                    <input type="range" id="nodeWidth" min="10" max="50" value="20">
+                </div>
+                <div class="control-item">
+                    <label for="nodePadding">Node Padding</label>
+                    <input type="range" id="nodePadding" min="5" max="30" value="10">
+                </div>
+                <div class="control-item">
+                    <label for="nodeColor">Node Color</label>
+                    <input type="color" id="nodeColor" value="#4a90e2">
+                </div>
+                <div class="control-item">
+                    <label for="linkOpacity">Link Opacity</label>
+                    <input type="range" id="linkOpacity" min="0.1" max="1" step="0.1" value="0.7">
+                </div>
+                <div class="control-item">
+                    <label for="animationSpeed">Animation Speed</label>
+                    <select id="animationSpeed">
+                        <option value="0.2">Fast</option>
+                        <option value="0.5" selected>Normal</option>
+                        <option value="1">Slow</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="visualization-container">
+            <div id="sankey-diagram">
+                <div class="loading">Loading Sankey diagram...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- D3.js and d3-sankey libraries -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
+
+    <script>
+        // Global variables
+        let sankeyData = null;
+        let svg = null;
+        let sankey = null;
+        let nodes = null;
+        let links = null;
+        let visibleNodes = new Set();
+        let visibleLinks = new Set();
+        let animationDuration = 500;
+
+        // Configuration object for customization
+        const config = {
+            nodeWidth: 20,
+            nodePadding: 10,
+            nodeColor: '#4a90e2',
+            linkOpacity: 0.7,
+            animationSpeed: 0.5,
+            width: 800,
+            height: 500,
+            margin: { top: 20, right: 20, bottom: 20, left: 20 }
+        };
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, initializing Sankey diagram...');
+            initializeControls();
+            loadData();
+        });
+
+        // Initialize control event listeners
+        function initializeControls() {
+            document.getElementById('nodeWidth').addEventListener('input', function(e) {
+                config.nodeWidth = parseInt(e.target.value);
+                updateDiagram();
+            });
+
+            document.getElementById('nodePadding').addEventListener('input', function(e) {
+                config.nodePadding = parseInt(e.target.value);
+                updateDiagram();
+            });
+
+            document.getElementById('nodeColor').addEventListener('input', function(e) {
+                config.nodeColor = e.target.value;
+                updateNodeColors();
+            });
+
+            document.getElementById('linkOpacity').addEventListener('input', function(e) {
+                config.linkOpacity = parseFloat(e.target.value);
+                updateLinkOpacity();
+            });
+
+            document.getElementById('animationSpeed').addEventListener('change', function(e) {
+                config.animationSpeed = parseFloat(e.target.value);
+                animationDuration = config.animationSpeed * 1000;
+            });
+        }
+
+        // Load data from JSON file
+        function loadData() {
+            d3.json('data.json').then(function(data) {
+                console.log('Data loaded:', data);
+                sankeyData = data;
+                initializeDiagram();
+            }).catch(function(error) {
+                console.error('Error loading data:', error);
+                showError('Failed to load data. Please check if data.json exists.');
+            });
+        }
+
+        // Show error message
+        function showError(message) {
+            const container = document.getElementById('sankey-diagram');
+            container.innerHTML = `<div class="error">${message}</div>`;
+        }
+
+        // Initialize the Sankey diagram
+        function initializeDiagram() {
+            console.log('Initializing diagram...');
+            
+            // Clear the container
+            const container = document.getElementById('sankey-diagram');
+            container.innerHTML = '';
+
+            // Set up dimensions
+            const containerRect = container.getBoundingClientRect();
+            config.width = containerRect.width - config.margin.left - config.margin.right;
+            config.height = containerRect.height - config.margin.top - config.margin.bottom;
+
+            // Create SVG
+            svg = d3.select('#sankey-diagram')
+                .append('svg')
+                .attr('width', config.width + config.margin.left + config.margin.right)
+                .attr('height', config.height + config.margin.top + config.margin.bottom);
+
+            // Create main group
+            const g = svg.append('g')
+                .attr('transform', `translate(${config.margin.left},${config.margin.top})`);
+
+            // Create defs for gradients
+            const defs = svg.append('defs');
+
+            // Initialize sankey layout
+            sankey = d3.sankey()
+                .nodeWidth(config.nodeWidth)
+                .nodePadding(config.nodePadding)
+                .extent([[1, 1], [config.width - 1, config.height - 6]]);
+
+            // Process the data for d3-sankey
+            const processedData = processData(sankeyData);
+            
+            // Calculate layout
+            const { nodes: sankeyNodes, links: sankeyLinks } = sankey(processedData);
+
+            // Create gradients for links
+            createGradients(defs, sankeyData.links);
+
+            // Draw links
+            drawLinks(g, sankeyLinks);
+
+            // Draw nodes
+            drawNodes(g, sankeyNodes);
+
+            // Initialize progressive disclosure
+            initializeProgressiveDisclosure();
+        }
+
+        // Process data for d3-sankey format
+        function processData(data) {
+            // Create a map of node IDs to indices
+            const nodeMap = new Map();
+            data.nodes.forEach((node, index) => {
+                nodeMap.set(node.id, index);
+            });
+
+            const nodes = data.nodes.map(d => ({
+                ...d,
+                name: d.name,
+                id: d.id
+            }));
+
+            const links = data.links.map(d => {
+                const sourceIndex = nodeMap.get(d.source);
+                const targetIndex = nodeMap.get(d.target);
+                
+                if (sourceIndex === undefined) {
+                    console.error(`Source node not found: ${d.source}`);
+                    return null;
+                }
+                if (targetIndex === undefined) {
+                    console.error(`Target node not found: ${d.target}`);
+                    return null;
+                }
+
+                return {
+                    ...d,
+                    source: sourceIndex,
+                    target: targetIndex,
+                    value: d.value
+                };
+            }).filter(link => link !== null);
+
+            console.log('Processed data:', { nodes, links });
+            return { nodes, links };
+        }
+
+        // Create gradient definitions
+        function createGradients(defs, linksData) {
+            linksData.forEach(link => {
+                const gradientId = `gradient-${link.id}`;
+                const gradient = defs.append('linearGradient')
+                    .attr('id', gradientId)
+                    .attr('gradientUnits', 'userSpaceOnUse');
+
+                gradient.append('stop')
+                    .attr('offset', '0%')
+                    .attr('stop-color', link.style.gradient.start);
+
+                gradient.append('stop')
+                    .attr('offset', '100%')
+                    .attr('stop-color', link.style.gradient.end);
+            });
+        }
+
+        // Draw links
+        function drawLinks(g, sankeyLinks) {
+            const linkGroup = g.append('g')
+                .attr('class', 'links');
+
+            links = linkGroup.selectAll('.link')
+                .data(sankeyLinks)
+                .enter().append('path')
+                .attr('class', 'link')
+                .attr('d', d3.sankeyLinkHorizontal())
+                .attr('stroke', d => {
+                    const sourceId = sankeyData.nodes[d.source.index || d.source]?.id;
+                    const targetId = sankeyData.nodes[d.target.index || d.target]?.id;
+                    const linkData = sankeyData.links.find(link => 
+                        link.source === sourceId && link.target === targetId
+                    );
+                    return linkData ? `url(#gradient-${linkData.id})` : '#999';
+                })
+                .attr('stroke-width', d => Math.max(1, d.width))
+                .attr('stroke-opacity', config.linkOpacity)
+                .attr('fill', 'none')
+                .classed('link-hidden', d => {
+                    const sourceId = sankeyData.nodes[d.source.index || d.source]?.id;
+                    const targetId = sankeyData.nodes[d.target.index || d.target]?.id;
+                    const linkData = sankeyData.links.find(link => 
+                        link.source === sourceId && link.target === targetId
+                    );
+                    return linkData ? !linkData.visible : true;
+                })
+                .on('mouseover', function(event, d) {
+                    d3.select(this).attr('stroke-opacity', 1);
+                    showTooltip(event, d, 'link');
+                })
+                .on('mouseout', function(event, d) {
+                    d3.select(this).attr('stroke-opacity', config.linkOpacity);
+                    hideTooltip();
+                });
+        }
+
+        // Draw nodes
+        function drawNodes(g, sankeyNodes) {
+            const nodeGroup = g.append('g')
+                .attr('class', 'nodes');
+
+            nodes = nodeGroup.selectAll('.node')
+                .data(sankeyNodes)
+                .enter().append('g')
+                .attr('class', 'node')
+                .attr('transform', d => `translate(${d.x0},${d.y0})`)
+                .classed('node-hidden', d => {
+                    const nodeData = sankeyData.nodes.find(node => node.id === d.id);
+                    return nodeData ? !nodeData.visible : true;
+                })
+                .on('click', function(event, d) {
+                    revealConnectedNodes(d.id);
+                })
+                .on('mouseover', function(event, d) {
+                    showTooltip(event, d, 'node');
+                })
+                .on('mouseout', function(event, d) {
+                    hideTooltip();
+                });
+
+            // Add rectangles
+            nodes.append('rect')
+                .attr('class', 'node-rect')
+                .attr('width', d => d.x1 - d.x0)
+                .attr('height', d => d.y1 - d.y0)
+                .attr('fill', d => {
+                    const nodeData = sankeyData.nodes.find(node => node.id === d.id);
+                    return nodeData ? nodeData.style.color : config.nodeColor;
+                })
+                .attr('stroke', d => {
+                    const nodeData = sankeyData.nodes.find(node => node.id === d.id);
+                    const color = nodeData ? nodeData.style.color : config.nodeColor;
+                    return d3.color(color).darker(0.5);
+                });
+
+            // Add icons
+            nodes.append('foreignObject')
+                .attr('class', 'node-icon')
+                .attr('width', 24)
+                .attr('height', 24)
+                .attr('x', d => (d.x1 - d.x0) / 2 - 12)
+                .attr('y', d => (d.y1 - d.y0) / 2 - 12)
+                .html(d => {
+                    const nodeData = sankeyData.nodes.find(node => node.id === d.id);
+                    return nodeData && nodeData.style.icon ? nodeData.style.icon : 
+                        '<svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="8" fill="white"/></svg>';
+                });
+
+            // Add labels
+            nodes.append('text')
+                .attr('class', 'node-label')
+                .attr('x', d => (d.x1 - d.x0) / 2)
+                .attr('y', d => d.y1 - d.y0 + 15)
+                .attr('text-anchor', 'middle')
+                .text(d => d.name)
+                .style('font-size', '12px')
+                .style('fill', 'white');
+        }
+
+        // Initialize progressive disclosure
+        function initializeProgressiveDisclosure() {
+            // Set initial visibility based on data
+            visibleNodes.clear();
+            visibleLinks.clear();
+
+            sankeyData.interactionRules.initiallyVisible.forEach(nodeId => {
+                visibleNodes.add(nodeId);
+            });
+
+            updateVisibility();
+        }
+
+        // Update diagram with new configuration
+        function updateDiagram() {
+            if (!sankeyData || !svg) return;
+            
+            // Remove existing diagram
+            svg.remove();
+            
+            // Recreate diagram
+            initializeDiagram();
+        }
+
+        // Update node colors
+        function updateNodeColors() {
+            if (!nodes) return;
+            
+            nodes.select('.node-rect')
+                .attr('fill', d => {
+                    const nodeData = sankeyData.nodes.find(node => node.id === d.id);
+                    return nodeData ? nodeData.style.color : config.nodeColor;
+                })
+                .attr('stroke', d => {
+                    const nodeData = sankeyData.nodes.find(node => node.id === d.id);
+                    const color = nodeData ? nodeData.style.color : config.nodeColor;
+                    return d3.color(color).darker(0.5);
+                });
+        }
+
+        // Update link opacity
+        function updateLinkOpacity() {
+            if (!links) return;
+            
+            links.attr('stroke-opacity', config.linkOpacity);
+        }
+
+        // Progressive disclosure functionality
+        function revealConnectedNodes(nodeId) {
+            console.log('Revealing nodes connected to:', nodeId);
+            
+            const connectedNodeIds = sankeyData.interactionRules.progressiveDisclosure[nodeId] || [];
+            
+            // Add connected nodes to visible set
+            connectedNodeIds.forEach(id => {
+                visibleNodes.add(id);
+                
+                // Find and add connecting links
+                sankeyData.links.forEach(link => {
+                    if ((link.source === nodeId && link.target === id) ||
+                        (link.target === nodeId && link.source === id)) {
+                        visibleLinks.add(link.id);
+                    }
+                });
+            });
+
+            updateVisibility();
+        }
+
+        // Update visibility of nodes and links
+        function updateVisibility() {
+            if (!nodes || !links) return;
+
+            // Update node visibility
+            nodes.transition()
+                .duration(animationDuration)
+                .style('opacity', d => visibleNodes.has(d.id) ? 1 : 0.1)
+                .style('pointer-events', d => visibleNodes.has(d.id) ? 'all' : 'none');
+
+            // Update link visibility
+            links.transition()
+                .duration(animationDuration)
+                .style('opacity', d => {
+                    const sourceId = sankeyData.nodes[d.source.index || d.source]?.id;
+                    const targetId = sankeyData.nodes[d.target.index || d.target]?.id;
+                    const linkData = sankeyData.links.find(link => 
+                        link.source === sourceId && link.target === targetId
+                    );
+                    if (!linkData) return 0;
+                    return visibleLinks.has(linkData.id) ? config.linkOpacity : 0;
+                })
+                .style('pointer-events', d => {
+                    const sourceId = sankeyData.nodes[d.source.index || d.source]?.id;
+                    const targetId = sankeyData.nodes[d.target.index || d.target]?.id;
+                    const linkData = sankeyData.links.find(link => 
+                        link.source === sourceId && link.target === targetId
+                    );
+                    if (!linkData) return 'none';
+                    return visibleLinks.has(linkData.id) ? 'all' : 'none';
+                });
+        }
+
+        // Tooltip functions
+        function showTooltip(event, d, type) {
+            const tooltip = d3.select('body').append('div')
+                .attr('class', 'tooltip')
+                .style('opacity', 0)
+                .style('position', 'absolute')
+                .style('background', 'rgba(0, 0, 0, 0.8)')
+                .style('color', 'white')
+                .style('padding', '10px')
+                .style('border-radius', '5px')
+                .style('pointer-events', 'none')
+                .style('font-size', '12px')
+                .style('z-index', '1000');
+
+            let content = '';
+            if (type === 'node') {
+                const nodeData = sankeyData.nodes.find(node => node.id === d.id);
+                content = `<strong>${d.name}</strong><br/>${nodeData ? nodeData.description : ''}`;
+            } else if (type === 'link') {
+                const sourceId = sankeyData.nodes[d.source.index || d.source]?.id;
+                const targetId = sankeyData.nodes[d.target.index || d.target]?.id;
+                const linkData = sankeyData.links.find(link => 
+                    link.source === sourceId && link.target === targetId
+                );
+                content = `<strong>${d.source.name} → ${d.target.name}</strong><br/>Value: ${d.value}<br/>${linkData ? linkData.description : ''}`;
+            }
+
+            tooltip.html(content)
+                .style('left', (event.pageX + 10) + 'px')
+                .style('top', (event.pageY - 10) + 'px')
+                .transition()
+                .duration(200)
+                .style('opacity', 1);
+        }
+
+        function hideTooltip() {
+            d3.selectAll('.tooltip').remove();
+        }
+
+        // Window resize handler
+        window.addEventListener('resize', function() {
+            if (svg) {
+                updateDiagram();
+            }
+        });
+    </script>
+</body>
+</html> 

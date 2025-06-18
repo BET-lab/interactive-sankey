@@ -1,0 +1,14 @@
+# Task ID: 1
+# Title: 프로젝트 구조 및 기본 HTML 파일 생성
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Interactive Sankey 다이어그램을 위한 기본 HTML 구조와 필요한 파일들을 생성
+# Details:
+- 단일 HTML 파일 생성
+- D3.js 라이브러리 CDN 링크 추가
+- 기본 HTML/CSS 구조 설정
+- 빈 JavaScript 섹션 준비
+
+# Test Strategy:
+HTML 파일이 브라우저에서 로드되고 D3.js가 올바르게 로드되는지 확인

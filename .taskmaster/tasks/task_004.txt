@@ -1,0 +1,14 @@
+# Task ID: 4
+# Title: 노드 스타일링 및 SVG 아이콘 시스템 구현
+# Status: pending
+# Dependencies: 3 (Not found)
+# Priority: medium
+# Description: 노드의 커스텀 스타일링과 SVG 아이콘을 표시하는 시스템을 구현
+# Details:
+- 노드 색상, 크기 커스터마이징
+- SVG 아이콘 렌더링 시스템
+- 플레이스홀더 SVG 아이콘 생성
+- 스타일 설정 JSON 구조 적용
+
+# Test Strategy:
+노드가 지정된 스타일과 아이콘으로 표시되는지 확인

@@ -1,0 +1,14 @@
+# Task ID: 3
+# Title: D3-Sankey 레이아웃 기본 구현
+# Status: pending
+# Dependencies: 2 (Not found)
+# Priority: high
+# Description: D3.js와 d3-sankey 플러그인을 사용하여 기본 Sankey 다이어그램 레이아웃을 구현
+# Details:
+- d3-sankey 플러그인 로드
+- JSON 데이터 읽기 기능 구현
+- 기본 노드와 링크 렌더링
+- SVG 컨테이너 설정
+
+# Test Strategy:
+기본 Sankey 다이어그램이 화면에 표시되는지 확인

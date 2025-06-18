@@ -1,0 +1,14 @@
+# Task ID: 5
+# Title: 링크 그라디언트 및 스타일링 구현
+# Status: pending
+# Dependencies: 4 (Not found)
+# Priority: medium
+# Description: 노드 간 연결 링크에 그라디언트 효과와 커스텀 스타일링을 적용
+# Details:
+- SVG 그라디언트 정의 생성
+- 링크별 그라디언트 색상 적용
+- 링크 두께 및 투명도 조절
+- 호버 효과 추가
+
+# Test Strategy:
+링크가 그라디언트 색상으로 표시되고 인터랙션이 작동하는지 확인

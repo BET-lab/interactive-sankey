@@ -1,0 +1,14 @@
+# Task ID: 6
+# Title: 프로그레시브 디스클로저 인터랙션 구현
+# Status: pending
+# Dependencies: 5 (Not found)
+# Priority: high
+# Description: 초기에는 왼쪽 노드만 표시하고 클릭 시 연결된 노드들을 점진적으로 공개하는 기능을 구현
+# Details:
+- 초기 상태: 첫 번째 레벨 노드만 표시
+- 다른 노드들은 숨김 또는 투명 처리
+- 노드 클릭 이벤트 핸들링
+- 연결된 노드와 링크 표시 로직
+
+# Test Strategy:
+초기 상태에서 왼쪽 노드만 보이고 클릭 시 다음 노드들이 나타나는지 확인
