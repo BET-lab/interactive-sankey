@@ -33,6 +33,7 @@
       "name": "Energy Sources",
       "level": 0,
       "x": 50,
+      "y": 200,
       "style": {
         "color": "#e74c3c",
         "icon": "<svg viewBox='0 0 24 24' width='20' height='20'><path d='M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z' fill='white'/></svg>"
@@ -44,7 +45,8 @@
       "id": "coal",
       "name": "Coal",
       "level": 1,
-      "x": 250,
+      "x": 300,
+      "y": 100,
       "style": {
         "color": "#2c3e50",
         "icon": "<svg viewBox='0 0 24 24' width='20' height='20'><circle cx='12' cy='12' r='8' fill='white'/></svg>"
@@ -57,7 +59,8 @@
       "id": "natural_gas",
       "name": "Natural Gas",
       "level": 1,
-      "x": 250,
+      "x": 300,
+      "y": 200,
       "style": {
         "color": "#3498db",
         "icon": "<svg viewBox='0 0 24 24' width='20' height='20'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z' fill='white'/></svg>"
@@ -70,7 +73,8 @@
       "id": "renewables",
       "name": "Renewables",
       "level": 1,
-      "x": 250,
+      "x": 300,
+      "y": 300,
       "style": {
         "color": "#27ae60",
         "icon": "<svg viewBox='0 0 24 24' width='20' height='20'><path d='M12 2l-5.5 9h11z' fill='white'/><circle cx='12' cy='16' r='4' fill='white'/></svg>"
@@ -122,7 +126,8 @@
       "id": "electricity_grid",
       "name": "Electricity Grid",
       "level": 2,
-      "x": 450,
+      "x": 550,
+      "y": 200,
       "style": {
         "color": "#8e44ad",
         "icon": "<svg viewBox='0 0 24 24' width='20' height='20'><path d='M12 2L2 7v10c0 5.55 3.84 9.74 9 11 5.16-1.26 9-5.45 9-11V7l-10-5z' fill='white'/></svg>"
@@ -135,7 +140,8 @@
       "id": "residential",
       "name": "Residential",
       "level": 3,
-      "x": 650,
+      "x": 750,
+      "y": 100,
       "style": {
         "color": "#e67e22",
         "icon": "<svg viewBox='0 0 24 24' width='20' height='20'><path d='M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z' fill='white'/></svg>"
@@ -148,7 +154,8 @@
       "id": "commercial",
       "name": "Commercial",
       "level": 3,
-      "x": 650,
+      "x": 750,
+      "y": 200,
       "style": {
         "color": "#34495e",
         "icon": "<svg viewBox='0 0 24 24' width='20' height='20'><path d='M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z' fill='white'/></svg>"
@@ -161,7 +168,8 @@
       "id": "industrial",
       "name": "Industrial",
       "level": 3,
-      "x": 650,
+      "x": 750,
+      "y": 300,
       "style": {
         "color": "#95a5a6",
         "icon": "<svg viewBox='0 0 24 24' width='20' height='20'><path d='M12 2L2 7v10c0 5.55 3.84 9.74 9 11 5.16-1.26 9-5.45 9-11V7l-10-5z' fill='white'/><circle cx='12' cy='12' r='3' fill='#95a5a6'/></svg>"
