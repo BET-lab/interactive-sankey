@@ -13,29 +13,29 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #ffffff;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
 
         .header {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.05);
             backdrop-filter: blur(10px);
             padding: 20px;
             text-align: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
         }
 
         .header h1 {
-            color: white;
+            color: #333333;
             font-size: 2rem;
             font-weight: 300;
             margin-bottom: 10px;
         }
 
         .header p {
-            color: rgba(255, 255, 255, 0.8);
+            color: rgba(0, 0, 0, 0.6);
             font-size: 1rem;
         }
 
@@ -47,16 +47,16 @@
         }
 
         .controls {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.05);
             backdrop-filter: blur(10px);
             border-radius: 10px;
             padding: 20px;
             margin-bottom: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(0, 0, 0, 0.1);
         }
 
         .controls h3 {
-            color: white;
+            color: #333333;
             margin-bottom: 15px;
             font-weight: 400;
         }
@@ -75,7 +75,7 @@
         }
 
         .control-item label {
-            color: rgba(255, 255, 255, 0.9);
+            color: rgba(0, 0, 0, 0.8);
             font-size: 0.9rem;
             font-weight: 500;
         }
@@ -84,10 +84,10 @@
         .control-item input[type="color"],
         .control-item select {
             padding: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(0, 0, 0, 0.2);
             border-radius: 5px;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
+            background: rgba(0, 0, 0, 0.05);
+            color: #333333;
         }
 
         .control-item input[type="range"] {
@@ -99,17 +99,17 @@
         }
 
         .control-item select option {
-            background: #333;
-            color: white;
+            background: #ffffff;
+            color: #333333;
         }
 
         .visualization-container {
             flex: 1;
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(0, 0, 0, 0.02);
             backdrop-filter: blur(10px);
             border-radius: 15px;
             padding: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(0, 0, 0, 0.1);
             overflow: hidden;
             position: relative;
         }
@@ -127,12 +127,11 @@
 
         /* Remove hover transform to prevent jittering */
 
-        .node-rect {
+        .node-circle {
             fill: #4a90e2;
             stroke: #2c5aa0;
-            stroke-width: 2;
-            rx: 8;
-            ry: 8;
+            stroke-width: 3;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
         }
 
         .node-icon {
@@ -142,14 +141,13 @@
         .node-label {
             font-size: 12px;
             font-weight: 500;
-            fill: white;
+            fill: #333333;
             text-anchor: middle;
             pointer-events: none;
         }
 
         .link {
-            fill: none;
-            stroke-opacity: 0.7;
+            opacity: 0.7;
             transition: all 0.3s ease;
         }
 
@@ -191,7 +189,7 @@
             justify-content: center;
             align-items: center;
             height: 100%;
-            color: white;
+            color: #333333;
             font-size: 1.2rem;
         }
 
@@ -205,9 +203,7 @@
             text-align: center;
         }
 
-        .node-rect {
-            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
-        }
+
 
         .link {
             cursor: pointer;
@@ -384,11 +380,12 @@
             // Create defs for gradients
             const defs = svg.append('defs');
 
-            // Initialize sankey layout
+            // Initialize sankey layout for circular nodes
+            const nodeRadius = 30;
             sankey = d3.sankey()
-                .nodeWidth(config.nodeWidth)
-                .nodePadding(config.nodePadding)
-                .extent([[1, 1], [config.width - 1, config.height - 6]]);
+                .nodeWidth(nodeRadius * 2) // Width should accommodate circular nodes
+                .nodePadding(config.nodePadding + 20) // Extra padding for circular nodes and labels
+                .extent([[nodeRadius, nodeRadius], [config.width - nodeRadius, config.height - nodeRadius]]);
 
             // Process the data for d3-sankey
             const processedData = processData(sankeyData);
@@ -467,6 +464,82 @@
         }
 
         // Draw links
+        // Custom variable-width link generator
+        function createVariableWidthLink(d) {
+            const source = d.source;
+            const target = d.target;
+            
+            // Get source and target positions (center of circular nodes)
+            const sourceX = source.x1;
+            const sourceY = source.y0 + (source.y1 - source.y0) / 2;
+            const targetX = target.x0;
+            const targetY = target.y0 + (target.y1 - target.y0) / 2;
+            
+            // Calculate widths
+            const minWidth = 2;
+            const maxWidth = 20;
+            const sourceWidth = Math.max(minWidth, Math.min(maxWidth, d.width || d.value * 0.2));
+            const targetWidth = sourceWidth; // For now, keep same width, but this can be adjusted
+            
+            // Control points for smooth curve
+            const curvature = 0.5;
+            const controlX1 = sourceX + (targetX - sourceX) * curvature;
+            const controlX2 = targetX - (targetX - sourceX) * curvature;
+            
+            // Create path with variable width using multiple segments
+            const segments = 20; // Number of segments for smooth width transition
+            let path = '';
+            
+            for (let i = 0; i <= segments; i++) {
+                const t = i / segments;
+                
+                // Bezier curve calculation
+                const x = Math.pow(1-t, 3) * sourceX + 
+                         3 * Math.pow(1-t, 2) * t * controlX1 + 
+                         3 * (1-t) * Math.pow(t, 2) * controlX2 + 
+                         Math.pow(t, 3) * targetX;
+                         
+                const y = Math.pow(1-t, 3) * sourceY + 
+                         3 * Math.pow(1-t, 2) * t * sourceY + 
+                         3 * (1-t) * Math.pow(t, 2) * targetY + 
+                         Math.pow(t, 3) * targetY;
+                
+                // Interpolate width
+                const width = sourceWidth + (targetWidth - sourceWidth) * t;
+                const halfWidth = width / 2;
+                
+                if (i === 0) {
+                    // Start the path
+                    path += `M ${x} ${y - halfWidth}`;
+                } else {
+                    path += ` L ${x} ${y - halfWidth}`;
+                }
+            }
+            
+            // Add the bottom curve
+            for (let i = segments; i >= 0; i--) {
+                const t = i / segments;
+                
+                const x = Math.pow(1-t, 3) * sourceX + 
+                         3 * Math.pow(1-t, 2) * t * controlX1 + 
+                         3 * (1-t) * Math.pow(t, 2) * controlX2 + 
+                         Math.pow(t, 3) * targetX;
+                         
+                const y = Math.pow(1-t, 3) * sourceY + 
+                         3 * Math.pow(1-t, 2) * t * sourceY + 
+                         3 * (1-t) * Math.pow(t, 2) * targetY + 
+                         Math.pow(t, 3) * targetY;
+                
+                const width = sourceWidth + (targetWidth - sourceWidth) * t;
+                const halfWidth = width / 2;
+                
+                path += ` L ${x} ${y + halfWidth}`;
+            }
+            
+            path += ' Z'; // Close the path
+            return path;
+        }
+
         function drawLinks(g, sankeyLinks) {
             const linkGroup = g.append('g')
                 .attr('class', 'links');
@@ -475,8 +548,8 @@
                 .data(sankeyLinks)
                 .enter().append('path')
                 .attr('class', 'link')
-                .attr('d', d3.sankeyLinkHorizontal())
-                .attr('stroke', d => {
+                .attr('d', createVariableWidthLink)
+                .attr('fill', d => {
                     const sourceId = sankeyData.nodes[d.source.index || d.source]?.id;
                     const targetId = sankeyData.nodes[d.target.index || d.target]?.id;
                     const linkData = sankeyData.links.find(link => 
@@ -484,9 +557,8 @@
                     );
                     return linkData ? `url(#gradient-${linkData.id})` : '#999';
                 })
-                .attr('stroke-width', d => Math.max(1, d.width))
-                .attr('stroke-opacity', config.linkOpacity)
-                .attr('fill', 'none')
+                .attr('stroke', 'none')
+                .attr('opacity', config.linkOpacity)
                 .classed('link-hidden', d => {
                     const sourceId = sankeyData.nodes[d.source.index || d.source]?.id;
                     const targetId = sankeyData.nodes[d.target.index || d.target]?.id;
@@ -497,13 +569,13 @@
                 })
                 .on('mouseover', function(event, d) {
                     if (!isAnimating) {
-                        d3.select(this).attr('stroke-opacity', 1);
+                        d3.select(this).attr('opacity', 1);
                         showTooltip(event, d, 'link');
                     }
                 })
                 .on('mouseout', function(event, d) {
                     if (!isAnimating) {
-                        d3.select(this).attr('stroke-opacity', config.linkOpacity);
+                        d3.select(this).attr('opacity', config.linkOpacity);
                         hideTooltip();
                     }
                 });
@@ -540,11 +612,14 @@
                     }
                 });
 
-            // Add rectangles
-            nodes.append('rect')
-                .attr('class', 'node-rect')
-                .attr('width', d => d.x1 - d.x0)
-                .attr('height', d => d.y1 - d.y0)
+            // Add circular nodes instead of rectangles
+            const nodeRadius = 30; // Fixed radius for circular nodes (should match sankey layout)
+            
+            nodes.append('circle')
+                .attr('class', 'node-circle')
+                .attr('cx', d => (d.x1 - d.x0) / 2)
+                .attr('cy', d => (d.y1 - d.y0) / 2)
+                .attr('r', nodeRadius)
                 .attr('fill', d => {
                     const nodeData = sankeyData.nodes.find(node => node.id === d.id);
                     return nodeData ? nodeData.style.color : config.nodeColor;
@@ -553,9 +628,10 @@
                     const nodeData = sankeyData.nodes.find(node => node.id === d.id);
                     const color = nodeData ? nodeData.style.color : config.nodeColor;
                     return d3.color(color).darker(0.5);
-                });
+                })
+                .attr('stroke-width', 3);
 
-            // Add icons
+            // Add icons in the center of circular nodes
             nodes.append('foreignObject')
                 .attr('class', 'node-icon')
                 .attr('width', 24)
@@ -568,15 +644,15 @@
                         '<svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="8" fill="white"/></svg>';
                 });
 
-            // Add labels
+            // Add labels below circular nodes
             nodes.append('text')
                 .attr('class', 'node-label')
                 .attr('x', d => (d.x1 - d.x0) / 2)
-                .attr('y', d => d.y1 - d.y0 + 15)
+                .attr('y', d => (d.y1 - d.y0) / 2 + nodeRadius + 20)
                 .attr('text-anchor', 'middle')
                 .text(d => d.name)
                 .style('font-size', '12px')
-                .style('fill', 'white');
+                .style('fill', '#333333');
         }
 
         // Initialize progressive disclosure
@@ -618,7 +694,7 @@
         function updateNodeColors() {
             if (!nodes) return;
             
-            nodes.select('.node-rect')
+            nodes.select('.node-circle')
                 .attr('fill', d => {
                     const nodeData = sankeyData.nodes.find(node => node.id === d.id);
                     return nodeData ? nodeData.style.color : config.nodeColor;
@@ -634,7 +710,7 @@
         function updateLinkOpacity() {
             if (!links) return;
             
-            links.attr('stroke-opacity', config.linkOpacity);
+            links.attr('opacity', config.linkOpacity);
         }
 
         // Progressive disclosure functionality

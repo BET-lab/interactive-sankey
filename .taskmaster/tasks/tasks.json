@@ -27,7 +27,7 @@
         "id": "3",
         "title": "D3-Sankey 레이아웃 기본 구현",
         "description": "D3.js와 d3-sankey 플러그인을 사용하여 기본 Sankey 다이어그램 레이아웃을 구현",
-        "status": "in-progress",
+        "status": "done",
         "priority": "high",
         "dependencies": [
           "2"
@@ -39,24 +39,24 @@
         "id": "4",
         "title": "노드 스타일링 및 SVG 아이콘 시스템 구현",
         "description": "노드의 커스텀 스타일링과 SVG 아이콘을 표시하는 시스템을 구현",
-        "status": "pending",
+        "status": "in-progress",
         "priority": "medium",
         "dependencies": [
           "3"
         ],
-        "details": "- 노드 색상, 크기 커스터마이징\n- SVG 아이콘 렌더링 시스템\n- 플레이스홀더 SVG 아이콘 생성\n- 스타일 설정 JSON 구조 적용",
+        "details": "- 노드를 원형으로 변경 (기존 사각형에서) ✅\n- SVG 아이콘 렌더링 시스템 ✅\n- 원형 노드 중앙에 아이콘 배치 ✅\n- 노드 라벨을 원형 노드 아래로 이동 ✅\n- 그림자 효과 및 스타일링 개선 ✅\n- 업로드된 이미지 스타일과 일치하도록 구현 ✅\n\n**완료된 개선사항:**\n- 사각형 노드 → 원형 노드로 변경\n- 30px 반지름의 고정 크기 원형 노드\n- 중앙 정렬된 SVG 아이콘\n- 원형 노드 아래 라벨 배치\n- CSS 그림자 효과 추가",
         "testStrategy": "노드가 지정된 스타일과 아이콘으로 표시되는지 확인"
       },
       {
         "id": "5",
         "title": "링크 그라디언트 및 스타일링 구현",
         "description": "노드 간 연결 링크에 그라디언트 효과와 커스텀 스타일링을 적용",
-        "status": "pending",
+        "status": "done",
         "priority": "medium",
         "dependencies": [
           "4"
         ],
-        "details": "- SVG 그라디언트 정의 생성\n- 링크별 그라디언트 색상 적용\n- 링크 두께 및 투명도 조절\n- 호버 효과 추가",
+        "details": "- SVG 그라디언트 정의 생성 ✅\n- 링크별 그라디언트 색상 적용 ✅\n- 링크 두께를 value 기반 가변으로 변경 ✅\n- 호버 효과 추가 ✅\n- 부드러운 링크 스타일링 (rounded caps) ✅\n\n**완료된 개선사항:**\n- 각 링크별 고유 그라디언트 색상\n- value 기반 가변 두께 (2px ~ 20px)\n- 부드러운 라인 캡 및 조인\n- 마우스오버 시 투명도 증가 효과\n- 업로드된 이미지와 유사한 굵기 스케일링",
         "testStrategy": "링크가 그라디언트 색상으로 표시되고 인터랙션이 작동하는지 확인"
       },
       {
@@ -100,7 +100,9 @@
       "version": "1.0.0",
       "created": "2025-01-12",
       "lastModified": "2025-01-12",
-      "totalTasks": 8
+      "totalTasks": 8,
+      "description": "Tasks for master context",
+      "updated": "2025-01-12"
     }
   }
 }
