@@ -182,6 +182,10 @@
             transition: all 0.3s ease;
         }
 
+        .link.no-transition {
+            transition: none !important;
+        }
+
         /* Link hover handled via JavaScript to prevent conflicts */
 
         .link-hidden {
@@ -334,6 +338,7 @@
         let isDragging = false;
         let draggedNode = null;
         let dragOffset = { x: 0, y: 0 };
+        let animationFrameId = null;
 
         // Progressive disclosure state
         const visibleNodes = new Set();
@@ -1032,6 +1037,12 @@
             
             // Add visual feedback
             d3.select(this).classed('dragging', true);
+            
+            // Disable transitions on all links during drag for immediate response
+            if (links) {
+                links.classed('no-transition', true);
+            }
+            
             console.log(`Started dragging node: ${d.id} at (${d.x0}, ${d.y0})`);
         }
 
@@ -1077,8 +1088,14 @@
                 .interrupt() // Stop any ongoing transitions
                 .attr('transform', `translate(${d.x0},${d.y0})`);
 
-            // Update links in real-time
-            updateLinksPosition();
+            // Update links in real-time with optimized animation frame
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+            animationFrameId = requestAnimationFrame(() => {
+                updateLinksPosition();
+                animationFrameId = null;
+            });
         }
 
         function dragEnded(event, d) {
@@ -1092,6 +1109,11 @@
             // Remove visual feedback
             d3.select(this).classed('dragging', false);
 
+            // Re-enable transitions on all links after drag
+            if (links) {
+                links.classed('no-transition', false);
+            }
+
             // Update the original data with new coordinates
             const originalNode = sankeyData.nodes.find(node => node.id === d.id);
             if (originalNode) {
@@ -1100,7 +1122,13 @@
                 console.log(`Updated node ${d.id} coordinates: (${d.x0}, ${d.y0})`);
             }
 
-            // Final link update
+            // Cancel any pending animation frame
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+
+            // Final link update (now with transitions re-enabled for smooth settling)
             updateLinksPosition();
         }
 
@@ -1108,10 +1136,18 @@
         function updateLinksPosition() {
             if (!links) return;
 
-            // Update links immediately without transition for smooth dragging
-            links
-                .interrupt() // Stop any ongoing transitions
-                .attr('d', createVariableWidthLink);
+            if (isDragging) {
+                // During drag: immediate update with no transitions
+                links
+                    .interrupt() // Stop any ongoing transitions
+                    .classed('no-transition', true)
+                    .attr('d', createVariableWidthLink);
+            } else {
+                // After drag: allow smooth transitions for settling
+                links
+                    .classed('no-transition', false)
+                    .attr('d', createVariableWidthLink);
+            }
         }
 
         // Window resize handler
