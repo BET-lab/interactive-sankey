@@ -570,13 +570,13 @@
                 .on('mouseover', function(event, d) {
                     if (!isAnimating) {
                         d3.select(this).attr('opacity', 1);
-                        showTooltip(event, d, 'link');
+                        // showTooltip(event, d, 'link'); // Temporarily disabled
                     }
                 })
                 .on('mouseout', function(event, d) {
                     if (!isAnimating) {
                         d3.select(this).attr('opacity', config.linkOpacity);
-                        hideTooltip();
+                        // hideTooltip(); // Temporarily disabled
                     }
                 });
         }
@@ -603,12 +603,12 @@
                 })
                 .on('mouseover', function(event, d) {
                     if (!isAnimating && visibleNodes.has(d.id)) {
-                        showTooltip(event, d, 'node');
+                        // showTooltip(event, d, 'node'); // Temporarily disabled
                     }
                 })
                 .on('mouseout', function(event, d) {
                     if (!isAnimating) {
-                        hideTooltip();
+                        // hideTooltip(); // Temporarily disabled
                     }
                 });
 
