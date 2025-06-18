@@ -646,14 +646,26 @@
             // Add connected nodes to visible set
             connectedNodeIds.forEach(id => {
                 visibleNodes.add(id);
+                
+                // Find and add direct links between clicked node and newly added node
+                sankeyData.links.forEach(link => {
+                    if ((link.source === nodeId && link.target === id) ||
+                        (link.target === nodeId && link.source === id)) {
+                        visibleLinks.add(link.id);
+                        console.log('Added direct link:', link.id, 'between', nodeId, 'and', id);
+                    }
+                });
             });
             
-            // Add all links between any visible nodes
+            // Also add any other links between all visible nodes (for completeness)
             sankeyData.links.forEach(link => {
                 if (visibleNodes.has(link.source) && visibleNodes.has(link.target)) {
                     visibleLinks.add(link.id);
                 }
             });
+
+            console.log('Visible nodes:', Array.from(visibleNodes));
+            console.log('Visible links:', Array.from(visibleLinks));
 
             updateVisibility();
         }
