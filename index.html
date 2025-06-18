@@ -686,20 +686,57 @@
             const linkTransition = links.transition()
                 .duration(animationDuration)
                 .style('opacity', d => {
-                    const sourceId = sankeyData.nodes[d.source.index || d.source]?.id;
-                    const targetId = sankeyData.nodes[d.target.index || d.target]?.id;
+                    // Get source and target IDs from D3 processed data
+                    let sourceId, targetId;
+                    
+                    if (typeof d.source === 'object') {
+                        sourceId = d.source.id;
+                    } else {
+                        sourceId = sankeyData.nodes[d.source]?.id;
+                    }
+                    
+                    if (typeof d.target === 'object') {
+                        targetId = d.target.id;
+                    } else {
+                        targetId = sankeyData.nodes[d.target]?.id;
+                    }
+                    
+                    // Find matching link in original data
                     const linkData = sankeyData.links.find(link => 
                         link.source === sourceId && link.target === targetId
                     );
-                    if (!linkData) return 0;
-                    return visibleLinks.has(linkData.id) ? config.linkOpacity : 0;
+                    
+                    if (!linkData) {
+                        console.log('No link data found for:', sourceId, '->', targetId);
+                        return 0;
+                    }
+                    
+                    const isVisible = visibleLinks.has(linkData.id);
+                    console.log('Link', linkData.id, 'visibility:', isVisible, 'opacity:', isVisible ? config.linkOpacity : 0);
+                    
+                    return isVisible ? config.linkOpacity : 0;
                 })
                 .style('pointer-events', d => {
-                    const sourceId = sankeyData.nodes[d.source.index || d.source]?.id;
-                    const targetId = sankeyData.nodes[d.target.index || d.target]?.id;
+                    // Get source and target IDs from D3 processed data
+                    let sourceId, targetId;
+                    
+                    if (typeof d.source === 'object') {
+                        sourceId = d.source.id;
+                    } else {
+                        sourceId = sankeyData.nodes[d.source]?.id;
+                    }
+                    
+                    if (typeof d.target === 'object') {
+                        targetId = d.target.id;
+                    } else {
+                        targetId = sankeyData.nodes[d.target]?.id;
+                    }
+                    
+                    // Find matching link in original data
                     const linkData = sankeyData.links.find(link => 
                         link.source === sourceId && link.target === targetId
                     );
+                    
                     if (!linkData) return 'none';
                     return visibleLinks.has(linkData.id) ? 'all' : 'none';
                 });
@@ -733,8 +770,21 @@
                 const nodeData = sankeyData.nodes.find(node => node.id === d.id);
                 content = `<strong>${d.name}</strong><br/>${nodeData ? nodeData.description : ''}`;
             } else if (type === 'link') {
-                const sourceId = sankeyData.nodes[d.source.index || d.source]?.id;
-                const targetId = sankeyData.nodes[d.target.index || d.target]?.id;
+                // Get source and target IDs from D3 processed data
+                let sourceId, targetId;
+                
+                if (typeof d.source === 'object') {
+                    sourceId = d.source.id;
+                } else {
+                    sourceId = sankeyData.nodes[d.source]?.id;
+                }
+                
+                if (typeof d.target === 'object') {
+                    targetId = d.target.id;
+                } else {
+                    targetId = sankeyData.nodes[d.target]?.id;
+                }
+                
                 const linkData = sankeyData.links.find(link => 
                     link.source === sourceId && link.target === targetId
                 );
