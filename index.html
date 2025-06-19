@@ -1318,18 +1318,19 @@
             if (sankeyData.interactionRules && sankeyData.interactionRules.initiallyVisible) {
                 sankeyData.interactionRules.initiallyVisible.forEach(nodeId => {
                     visibleNodes.add(nodeId);
-                    
-                    // Also add any links connected to initially visible nodes
-                    sankeyData.links.forEach(link => {
-                        if (link.source === nodeId || link.target === nodeId) {
-                            // Check if the other end of the link should also be visible
-                            const otherNodeId = link.source === nodeId ? link.target : link.source;
-                            if (sankeyData.interactionRules.initiallyVisible.includes(otherNodeId)) {
-                                visibleLinks.add(link.id);
-                            }
-                        }
-                    });
+                    console.log('Initially visible node:', nodeId);
                 });
+                
+                // Add links that connect initially visible nodes
+                sankeyData.links.forEach(link => {
+                    if (visibleNodes.has(link.source) && visibleNodes.has(link.target)) {
+                        visibleLinks.add(link.id);
+                        console.log('Initially visible link:', link.id, 'between', link.source, 'and', link.target);
+                    }
+                });
+                
+                console.log('Initial visible nodes:', Array.from(visibleNodes));
+                console.log('Initial visible links:', Array.from(visibleLinks));
             } else {
                 // If no interaction rules, make all nodes and links visible by default
                 console.log('No interaction rules found, showing all nodes and links');
@@ -1389,36 +1390,64 @@
 
         // Progressive disclosure functionality
         function revealConnectedNodes(nodeId) {
-            console.log('Revealing nodes connected to:', nodeId);
+            console.log('=== Revealing nodes connected to:', nodeId, '===');
             
-            // Check if interaction rules exist
-            const connectedNodeIds = (sankeyData.interactionRules && sankeyData.interactionRules.progressiveDisclosure) 
-                ? (sankeyData.interactionRules.progressiveDisclosure[nodeId] || [])
-                : [];
+            // Store initial state for comparison
+            const initialVisibleNodes = new Set(visibleNodes);
+            const initialVisibleLinks = new Set(visibleLinks);
+            
+            // First check if interaction rules exist
+            let connectedNodeIds = [];
+            if (sankeyData.interactionRules && sankeyData.interactionRules.progressiveDisclosure) {
+                connectedNodeIds = sankeyData.interactionRules.progressiveDisclosure[nodeId] || [];
+                console.log('Using interaction rules, found:', connectedNodeIds.length, 'connected nodes:', connectedNodeIds);
+            } else {
+                // If no interaction rules, discover connected nodes from actual links
+                console.log('No interaction rules found, discovering connected nodes from links');
+                const connectedSet = new Set();
+                
+                sankeyData.links.forEach(link => {
+                    if (link.source === nodeId) {
+                        connectedSet.add(link.target);
+                    } else if (link.target === nodeId) {
+                        connectedSet.add(link.source);
+                    }
+                });
+                
+                connectedNodeIds = Array.from(connectedSet);
+                console.log('Discovered', connectedNodeIds.length, 'connected nodes:', connectedNodeIds);
+            }
             
             // Add connected nodes to visible set
             connectedNodeIds.forEach(id => {
-                visibleNodes.add(id);
-                
-                // Find and add direct links between clicked node and newly added node
-                sankeyData.links.forEach(link => {
-                    if ((link.source === nodeId && link.target === id) ||
-                        (link.target === nodeId && link.source === id)) {
-                        visibleLinks.add(link.id);
-                        console.log('Added direct link:', link.id, 'between', nodeId, 'and', id);
-                    }
-                });
+                if (!visibleNodes.has(id)) {
+                    visibleNodes.add(id);
+                    console.log('✓ Added NEW node to visible:', id);
+                } else {
+                    console.log('- Node already visible:', id);
+                }
             });
             
-            // Also add any other links between all visible nodes (for completeness)
+            // Add all links between visible nodes (both newly revealed and previously visible)
+            let newLinksAdded = 0;
             sankeyData.links.forEach(link => {
                 if (visibleNodes.has(link.source) && visibleNodes.has(link.target)) {
-                    visibleLinks.add(link.id);
+                    if (!visibleLinks.has(link.id)) {
+                        visibleLinks.add(link.id);
+                        console.log('✓ Added NEW link:', link.id, 'between', link.source, '->', link.target);
+                        newLinksAdded++;
+                    } else {
+                        console.log('- Link already visible:', link.id, 'between', link.source, '->', link.target);
+                    }
                 }
             });
 
-            console.log('Visible nodes:', Array.from(visibleNodes));
-            console.log('Visible links:', Array.from(visibleLinks));
+            console.log('Summary:');
+            console.log('- Nodes added:', visibleNodes.size - initialVisibleNodes.size);
+            console.log('- Links added:', newLinksAdded);
+            console.log('- Total visible nodes:', visibleNodes.size);
+            console.log('- Total visible links:', visibleLinks.size);
+            console.log('=== End reveal ===');
 
             updateVisibility();
         }
@@ -1426,6 +1455,10 @@
         // Update visibility of nodes and links
         function updateVisibility() {
             if (!nodes || !links) return;
+
+            console.log('=== Updating visibility ===');
+            console.log('Current visible nodes:', Array.from(visibleNodes));
+            console.log('Current visible links:', Array.from(visibleLinks));
 
             isAnimating = true;
 
@@ -1436,9 +1469,13 @@
                 .style('pointer-events', d => visibleNodes.has(d.id) ? 'all' : 'none');
 
             // Update link visibility
+            let linksProcessed = 0;
+            let linksVisible = 0;
             const linkTransition = links.transition()
                 .duration(animationDuration)
                 .style('opacity', d => {
+                    linksProcessed++;
+                    
                     // Get source and target IDs from D3 processed data
                     let sourceId, targetId;
                     
@@ -1460,14 +1497,21 @@
                     );
                     
                     if (!linkData) {
-                        console.log('No link data found for:', sourceId, '->', targetId);
+                        console.log('⚠️ No link data found for:', sourceId, '->', targetId);
                         return 0;
                     }
                     
                     const isVisible = visibleLinks.has(linkData.id);
-                    console.log('Link', linkData.id, 'visibility:', isVisible, 'opacity:', isVisible ? config.linkOpacity : 0);
+                    const opacity = isVisible ? config.linkOpacity : 0;
                     
-                    return isVisible ? config.linkOpacity : 0;
+                    if (isVisible) {
+                        linksVisible++;
+                        console.log('✓ Link visible:', linkData.id, '(', sourceId, '->', targetId, ') opacity:', opacity);
+                    } else {
+                        console.log('- Link hidden:', linkData.id, '(', sourceId, '->', targetId, ') opacity:', opacity);
+                    }
+                    
+                    return opacity;
                 })
                 .style('pointer-events', d => {
                     // Get source and target IDs from D3 processed data
@@ -1497,11 +1541,15 @@
             // Reset animation flag when both transitions complete
             Promise.all([nodeTransition.end(), linkTransition.end()])
                 .then(() => {
+                    console.log('Visibility update complete:', linksVisible, '/', linksProcessed, 'links visible');
+                    console.log('=== End visibility update ===');
                     isAnimating = false;
                     // Update draggable state after visibility changes
                     updateDraggableNodes();
                 })
                 .catch(() => {
+                    console.log('Visibility update completed with interruption');
+                    console.log('=== End visibility update ===');
                     isAnimating = false;
                     updateDraggableNodes();
                 });
