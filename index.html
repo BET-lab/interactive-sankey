@@ -210,6 +210,113 @@
             gap: 8px;
         }
 
+        /* Icon field styling */
+        .icon-field-group {
+            grid-column: span 2;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 12px;
+            background: #f9f9f9;
+        }
+
+        .icon-input-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .icon-options {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 8px;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .radio-option input[type="radio"] {
+            margin: 0;
+        }
+
+        .icon-input-area {
+            min-height: 40px;
+            padding: 8px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .no-input {
+            color: #666;
+            font-style: italic;
+            text-align: center;
+            padding: 10px;
+        }
+
+        .text-input-area input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .text-input-area small {
+            display: block;
+            margin-top: 5px;
+            color: #666;
+            font-size: 12px;
+        }
+
+        .svg-input-area textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            resize: vertical;
+        }
+
+        .svg-input-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .svg-input-buttons button {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .icon-preview {
+            padding: 10px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-align: center;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-preview .no-icon {
+            color: #666;
+            font-style: italic;
+        }
+
+        .icon-preview svg {
+            max-width: 24px;
+            max-height: 24px;
+        }
+
         .controls {
             background: rgba(0, 0, 0, 0.05);
             backdrop-filter: blur(10px);
@@ -330,6 +437,17 @@
         }
 
         .node-icon {
+            pointer-events: none;
+        }
+
+        .node-icon-text {
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+
+        .node-icon-svg svg {
             pointer-events: none;
         }
 
@@ -606,6 +724,10 @@
         function createNodeItem(node, index) {
             const div = document.createElement('div');
             div.className = 'data-item';
+            
+            // Get current icon value (support both old and new structure)
+            const currentIcon = node.style?.icon || node.icon || '';
+            
             div.innerHTML = `
                 <div class="data-item-header">
                     <span class="data-item-title">${node.name}</span>
@@ -627,6 +749,31 @@
                     <div class="field-group">
                         <label>Description</label>
                         <input type="text" value="${node.description || ''}" onchange="updateNodeProperty(${index}, 'description', this.value)">
+                    </div>
+                    <div class="field-group icon-field-group">
+                        <label>Icon</label>
+                        <div class="icon-input-container">
+                            <div class="icon-options">
+                                <label class="radio-option">
+                                    <input type="radio" name="icon-type-${index}" value="none" ${!currentIcon ? 'checked' : ''} onchange="updateIconType(${index}, 'none')">
+                                    <span>No Icon</span>
+                                </label>
+                                <label class="radio-option">
+                                    <input type="radio" name="icon-type-${index}" value="text" ${currentIcon && !currentIcon.includes('<svg') ? 'checked' : ''} onchange="updateIconType(${index}, 'text')">
+                                    <span>Text</span>
+                                </label>
+                                <label class="radio-option">
+                                    <input type="radio" name="icon-type-${index}" value="svg" ${currentIcon && currentIcon.includes('<svg') ? 'checked' : ''} onchange="updateIconType(${index}, 'svg')">
+                                    <span>SVG</span>
+                                </label>
+                            </div>
+                            <div class="icon-input-area" id="icon-input-${index}">
+                                ${createIconInputArea(index, currentIcon)}
+                            </div>
+                            <div class="icon-preview" id="icon-preview-${index}">
+                                ${currentIcon || '<span class="no-icon">No icon</span>'}
+                            </div>
+                        </div>
                     </div>
                     <div class="coordinate-fields">
                         <div class="field-group">
@@ -766,6 +913,154 @@
             
             updateDataEditor();
             updateDiagram();
+        }
+
+        // Create icon input area based on current icon type
+        function createIconInputArea(index, currentIcon) {
+            if (!currentIcon) {
+                return '<div class="no-input">Select an icon type above</div>';
+            } else if (currentIcon.includes('<svg')) {
+                return `
+                    <div class="svg-input-area">
+                        <textarea placeholder="Paste SVG code here or click 'Import SVG' button" 
+                                  onchange="updateNodeIcon(${index}, this.value)"
+                                  rows="4">${currentIcon.replace(/"/g, '&quot;')}</textarea>
+                        <div class="svg-input-buttons">
+                            <button type="button" onclick="importSvgFile(${index})" class="btn btn-secondary">Import SVG File</button>
+                            <button type="button" onclick="clearIcon(${index})" class="btn btn-secondary">Clear</button>
+                        </div>
+                        <input type="file" id="svg-file-${index}" accept=".svg" style="display: none" onchange="handleSvgFileImport(${index}, this)">
+                    </div>
+                `;
+            } else {
+                return `
+                    <div class="text-input-area">
+                        <input type="text" placeholder="Enter text (emoji, symbol, or short text)" 
+                               value="${currentIcon.replace(/"/g, '&quot;')}"
+                               onchange="updateNodeIcon(${index}, this.value)"
+                               maxlength="10">
+                        <small>Examples: ⚡, 🌟, A, 1, etc.</small>
+                    </div>
+                `;
+            }
+        }
+
+        // Update icon type when radio button changes
+        function updateIconType(index, type) {
+            const inputArea = document.getElementById(`icon-input-${index}`);
+            const previewArea = document.getElementById(`icon-preview-${index}`);
+            
+            let newIcon = '';
+            switch (type) {
+                case 'none':
+                    newIcon = '';
+                    inputArea.innerHTML = '<div class="no-input">No icon selected</div>';
+                    previewArea.innerHTML = '<span class="no-icon">No icon</span>';
+                    break;
+                case 'text':
+                    newIcon = '⚡'; // Default text icon
+                    inputArea.innerHTML = `
+                        <div class="text-input-area">
+                            <input type="text" placeholder="Enter text (emoji, symbol, or short text)" 
+                                   value="⚡"
+                                   onchange="updateNodeIcon(${index}, this.value)"
+                                   maxlength="10">
+                            <small>Examples: ⚡, 🌟, A, 1, etc.</small>
+                        </div>
+                    `;
+                    previewArea.innerHTML = '⚡';
+                    break;
+                case 'svg':
+                    newIcon = '<svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="8" fill="white"/></svg>';
+                    inputArea.innerHTML = `
+                        <div class="svg-input-area">
+                            <textarea placeholder="Paste SVG code here or click 'Import SVG' button" 
+                                      onchange="updateNodeIcon(${index}, this.value)"
+                                      rows="4">${newIcon.replace(/"/g, '&quot;')}</textarea>
+                            <div class="svg-input-buttons">
+                                <button type="button" onclick="importSvgFile(${index})" class="btn btn-secondary">Import SVG File</button>
+                                <button type="button" onclick="clearIcon(${index})" class="btn btn-secondary">Clear</button>
+                            </div>
+                            <input type="file" id="svg-file-${index}" accept=".svg" style="display: none" onchange="handleSvgFileImport(${index}, this)">
+                        </div>
+                    `;
+                    previewArea.innerHTML = newIcon;
+                    break;
+            }
+            
+            // Update the node icon
+            updateNodeIcon(index, newIcon);
+        }
+
+        // Update node icon and refresh preview
+        function updateNodeIcon(index, iconValue) {
+            // Support both old structure (node.icon) and new structure (node.style.icon)
+            if (!sankeyData.nodes[index].style) {
+                sankeyData.nodes[index].style = {};
+            }
+            sankeyData.nodes[index].style.icon = iconValue;
+            sankeyData.nodes[index].icon = iconValue; // Keep backward compatibility
+            
+            // Update preview
+            const previewArea = document.getElementById(`icon-preview-${index}`);
+            if (previewArea) {
+                previewArea.innerHTML = iconValue || '<span class="no-icon">No icon</span>';
+            }
+            
+            // Update diagram
+            updateDiagram();
+        }
+
+        // Import SVG file
+        function importSvgFile(index) {
+            const fileInput = document.getElementById(`svg-file-${index}`);
+            fileInput.click();
+        }
+
+        // Handle SVG file import
+        function handleSvgFileImport(index, fileInput) {
+            const file = fileInput.files[0];
+            if (file && file.type === 'image/svg+xml') {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const svgContent = e.target.result;
+                    
+                    // Clean up SVG (remove XML declaration, doctype, etc.)
+                    let cleanSvg = svgContent;
+                    cleanSvg = cleanSvg.replace(/<\?xml[^>]*\?>/g, '');
+                    cleanSvg = cleanSvg.replace(/<!DOCTYPE[^>]*>/g, '');
+                    cleanSvg = cleanSvg.trim();
+                    
+                    // Update textarea and icon
+                    const textarea = document.querySelector(`#icon-input-${index} textarea`);
+                    if (textarea) {
+                        textarea.value = cleanSvg;
+                    }
+                    
+                    updateNodeIcon(index, cleanSvg);
+                };
+                reader.readAsText(file);
+            } else {
+                alert('Please select a valid SVG file.');
+            }
+            
+            // Reset file input
+            fileInput.value = '';
+        }
+
+        // Clear icon
+        function clearIcon(index) {
+            const textarea = document.querySelector(`#icon-input-${index} textarea`);
+            const textInput = document.querySelector(`#icon-input-${index} input[type="text"]`);
+            
+            if (textarea) {
+                textarea.value = '';
+            }
+            if (textInput) {
+                textInput.value = '';
+            }
+            
+            updateNodeIcon(index, '');
         }
 
         function updateNodeProperty(index, property, value) {
@@ -1285,17 +1580,46 @@
                 .attr('stroke-width', 3);
 
             // Add icons in the center of circular nodes
-            nodes.append('foreignObject')
-                .attr('class', 'node-icon')
-                .attr('width', 24)
-                .attr('height', 24)
-                .attr('x', d => (d.x1 - d.x0) / 2 - 12)
-                .attr('y', d => (d.y1 - d.y0) / 2 - 12)
-                .html(d => {
-                    const nodeData = sankeyData.nodes.find(node => node.id === d.id);
-                    return nodeData && (nodeData.style?.icon || nodeData.icon) ? (nodeData.style?.icon || nodeData.icon) : 
-                        '<svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="8" fill="white"/></svg>';
-                });
+            nodes.each(function(d) {
+                const nodeElement = d3.select(this);
+                const nodeData = sankeyData.nodes.find(node => node.id === d.id);
+                const iconContent = nodeData && (nodeData.style?.icon || nodeData.icon) ? (nodeData.style?.icon || nodeData.icon) : '';
+                
+                if (iconContent) {
+                    if (iconContent.includes('<svg')) {
+                        // SVG icon - use foreignObject
+                        nodeElement.append('foreignObject')
+                            .attr('class', 'node-icon node-icon-svg')
+                            .attr('width', 24)
+                            .attr('height', 24)
+                            .attr('x', (d.x1 - d.x0) / 2 - 12)
+                            .attr('y', (d.y1 - d.y0) / 2 - 12)
+                            .html(iconContent);
+                    } else {
+                        // Text icon (emoji, symbol, or text) - use SVG text
+                        nodeElement.append('text')
+                            .attr('class', 'node-icon node-icon-text')
+                            .attr('x', (d.x1 - d.x0) / 2)
+                            .attr('y', (d.y1 - d.y0) / 2)
+                            .attr('text-anchor', 'middle')
+                            .attr('dominant-baseline', 'central')
+                            .style('font-size', '18px')
+                            .style('font-weight', 'bold')
+                            .style('fill', 'white')
+                            .style('pointer-events', 'none')
+                            .text(iconContent);
+                    }
+                } else {
+                    // Default icon if no icon specified
+                    nodeElement.append('foreignObject')
+                        .attr('class', 'node-icon node-icon-default')
+                        .attr('width', 24)
+                        .attr('height', 24)
+                        .attr('x', (d.x1 - d.x0) / 2 - 12)
+                        .attr('y', (d.y1 - d.y0) / 2 - 12)
+                        .html('<svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="8" fill="white"/></svg>');
+                }
+            });
 
             // Add labels below circular nodes
             nodes.append('text')
