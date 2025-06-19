@@ -447,8 +447,18 @@
             -ms-user-select: none;
         }
 
+        .node-icon-svg {
+            pointer-events: none;
+            overflow: visible;
+        }
+
         .node-icon-svg svg {
             pointer-events: none;
+            display: block !important;
+            width: 100% !important;
+            height: 100% !important;
+            max-width: none !important;
+            max-height: none !important;
         }
 
         .node-label {
@@ -1004,11 +1014,82 @@
             // Update preview
             const previewArea = document.getElementById(`icon-preview-${index}`);
             if (previewArea) {
-                previewArea.innerHTML = iconValue || '<span class="no-icon">No icon</span>';
+                if (iconValue) {
+                    if (iconValue.includes('<svg')) {
+                        // Process SVG for preview
+                        const processedSvg = processSvgForIcon(iconValue);
+                        previewArea.innerHTML = processedSvg;
+                    } else {
+                        // Text icon
+                        previewArea.innerHTML = `<span style="font-size: 18px; font-weight: bold;">${iconValue}</span>`;
+                    }
+                } else {
+                    previewArea.innerHTML = '<span class="no-icon">No icon</span>';
+                }
             }
             
             // Update diagram
             updateDiagram();
+        }
+
+        // Process SVG for use as node icon
+        function processSvgForIcon(svgContent) {
+            try {
+                // Clean the SVG content first
+                let cleanedSvg = svgContent.trim();
+                cleanedSvg = cleanedSvg.replace(/<\?xml[^>]*\?>/g, '');
+                cleanedSvg = cleanedSvg.replace(/<!DOCTYPE[^>]*>/g, '');
+                cleanedSvg = cleanedSvg.trim();
+                
+                // Create a temporary div to parse SVG
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = cleanedSvg;
+                const svgElement = tempDiv.querySelector('svg');
+                
+                if (!svgElement) {
+                    console.warn('No SVG element found, returning original content');
+                    return svgContent; // Return original if not valid SVG
+                }
+                
+                // Remove any existing width/height attributes and styles
+                svgElement.removeAttribute('width');
+                svgElement.removeAttribute('height');
+                svgElement.style.width = '';
+                svgElement.style.height = '';
+                
+                // Set fixed size and ensure proper display
+                svgElement.setAttribute('width', '24');
+                svgElement.setAttribute('height', '24');
+                svgElement.style.display = 'block';
+                
+                // If no viewBox exists, try to create one from original dimensions or use default
+                if (!svgElement.getAttribute('viewBox')) {
+                    // Try to find original width/height in the content or use reasonable defaults
+                    const originalWidth = cleanedSvg.match(/width\s*=\s*["']?(\d+(?:\.\d+)?)/i);
+                    const originalHeight = cleanedSvg.match(/height\s*=\s*["']?(\d+(?:\.\d+)?)/i);
+                    
+                    const numWidth = originalWidth ? parseFloat(originalWidth[1]) : 24;
+                    const numHeight = originalHeight ? parseFloat(originalHeight[1]) : 24;
+                    
+                    svgElement.setAttribute('viewBox', `0 0 ${numWidth} ${numHeight}`);
+                }
+                
+                // Ensure preserveAspectRatio is set for proper scaling
+                if (!svgElement.getAttribute('preserveAspectRatio')) {
+                    svgElement.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+                }
+                
+                // Set fill to white if no fill is specified for better visibility on colored backgrounds
+                if (!svgElement.getAttribute('fill') && !svgElement.style.fill) {
+                    svgElement.setAttribute('fill', 'white');
+                }
+                
+                // Return the processed SVG
+                return svgElement.outerHTML;
+            } catch (error) {
+                console.error('Error processing SVG:', error);
+                return svgContent; // Return original on error
+            }
         }
 
         // Import SVG file
@@ -1587,14 +1668,17 @@
                 
                 if (iconContent) {
                     if (iconContent.includes('<svg')) {
-                        // SVG icon - use foreignObject
+                        // SVG icon - use foreignObject with proper SVG formatting
+                        const processedSvg = processSvgForIcon(iconContent);
                         nodeElement.append('foreignObject')
                             .attr('class', 'node-icon node-icon-svg')
                             .attr('width', 24)
                             .attr('height', 24)
                             .attr('x', (d.x1 - d.x0) / 2 - 12)
                             .attr('y', (d.y1 - d.y0) / 2 - 12)
-                            .html(iconContent);
+                            .style('overflow', 'visible')
+                            .style('pointer-events', 'none')
+                            .html(processedSvg);
                     } else {
                         // Text icon (emoji, symbol, or text) - use SVG text
                         nodeElement.append('text')
@@ -1617,7 +1701,9 @@
                         .attr('height', 24)
                         .attr('x', (d.x1 - d.x0) / 2 - 12)
                         .attr('y', (d.y1 - d.y0) / 2 - 12)
-                        .html('<svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="8" fill="white"/></svg>');
+                        .style('overflow', 'visible')
+                        .style('pointer-events', 'none')
+                        .html('<svg viewBox="0 0 24 24" width="24" height="24" style="display: block;"><circle cx="12" cy="12" r="8" fill="white"/></svg>');
                 }
             });
 
