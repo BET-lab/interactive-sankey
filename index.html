@@ -174,6 +174,17 @@
             font-size: 0.8rem;
         }
 
+        .data-item-fields .field-group:nth-child(3),
+        .data-item-fields .field-group:nth-child(4) {
+            grid-column: span 1;
+        }
+
+        /* For links with more fields, allow them to span full width when needed */
+        .data-item-fields .field-group:nth-child(5),
+        .data-item-fields .field-group:nth-child(6) {
+            grid-column: span 1;
+        }
+
         .field-group {
             display: flex;
             flex-direction: column;
@@ -602,6 +613,14 @@
                         <label>Level</label>
                         <input type="number" value="${node.level || 0}" onchange="updateNodeProperty(${index}, 'level', parseInt(this.value))">
                     </div>
+                    <div class="field-group">
+                        <label>Color</label>
+                        <input type="color" value="${node.color || '#4a90e2'}" onchange="updateNodeProperty(${index}, 'color', this.value)">
+                    </div>
+                    <div class="field-group">
+                        <label>Description</label>
+                        <input type="text" value="${node.description || ''}" onchange="updateNodeProperty(${index}, 'description', this.value)">
+                    </div>
                     <div class="coordinate-fields">
                         <div class="field-group">
                             <label>X Coordinate</label>
@@ -666,6 +685,14 @@
                         <label>Color</label>
                         <input type="color" value="${link.color || '#4a90e2'}" onchange="updateLinkProperty(${index}, 'color', this.value)">
                     </div>
+                    <div class="field-group">
+                        <label>Gradient Start</label>
+                        <input type="color" value="${link.style?.gradient?.start || link.gradient?.start || link.color || '#4a90e2'}" onchange="updateLinkGradient(${index}, 'start', this.value)">
+                    </div>
+                    <div class="field-group">
+                        <label>Gradient End</label>
+                        <input type="color" value="${link.style?.gradient?.end || link.gradient?.end || d3.color(link.color || '#4a90e2').darker(0.3)}" onchange="updateLinkGradient(${index}, 'end', this.value)">
+                    </div>
                 </div>
             `;
             return div;
@@ -675,7 +702,9 @@
             const newNode = {
                 id: `node_${Date.now()}`,
                 name: `New Node ${sankeyData.nodes.length + 1}`,
-                level: 0
+                level: 0,
+                color: '#4a90e2',
+                description: 'New node description'
             };
             
             sankeyData.nodes.push(newNode);
@@ -690,10 +719,19 @@
             }
 
             const newLink = {
+                id: `link_${Date.now()}`,
                 source: sankeyData.nodes[0].id,
                 target: sankeyData.nodes[1].id,
                 value: 1,
-                color: '#4a90e2'
+                color: '#4a90e2',
+                visible: true,
+                description: 'New link description',
+                style: {
+                    gradient: {
+                        start: '#4a90e2',
+                        end: '#357abd'
+                    }
+                }
             };
             
             sankeyData.links.push(newLink);
@@ -715,6 +753,21 @@
             sankeyData.links[index][property] = value;
             updateDiagram();
             updateDataEditor(); // Refresh to show updated source/target names
+        }
+
+        function updateLinkGradient(index, gradientProperty, value) {
+            const link = sankeyData.links[index];
+            
+            // Ensure gradient structure exists
+            if (!link.style) {
+                link.style = {};
+            }
+            if (!link.style.gradient) {
+                link.style.gradient = {};
+            }
+            
+            link.style.gradient[gradientProperty] = value;
+            updateDiagram();
         }
 
         function deleteNode(index) {
@@ -961,13 +1014,19 @@
                     .attr('id', gradientId)
                     .attr('gradientUnits', 'userSpaceOnUse');
 
+                // Support both old structure (link.style.gradient) and new structure (link.gradient)
+                const gradientData = link.style?.gradient || link.gradient || {
+                    start: link.color || '#4a90e2',
+                    end: d3.color(link.color || '#4a90e2').darker(0.3)
+                };
+
                 gradient.append('stop')
                     .attr('offset', '0%')
-                    .attr('stop-color', link.style.gradient.start);
+                    .attr('stop-color', gradientData.start);
 
                 gradient.append('stop')
                     .attr('offset', '100%')
-                    .attr('stop-color', link.style.gradient.end);
+                    .attr('stop-color', gradientData.end);
             });
         }
 
@@ -1138,11 +1197,11 @@
                 .attr('r', nodeRadius)
                 .attr('fill', d => {
                     const nodeData = sankeyData.nodes.find(node => node.id === d.id);
-                    return nodeData ? nodeData.style.color : config.nodeColor;
+                    return nodeData ? (nodeData.style?.color || nodeData.color || config.nodeColor) : config.nodeColor;
                 })
                 .attr('stroke', d => {
                     const nodeData = sankeyData.nodes.find(node => node.id === d.id);
-                    const color = nodeData ? nodeData.style.color : config.nodeColor;
+                    const color = nodeData ? (nodeData.style?.color || nodeData.color || config.nodeColor) : config.nodeColor;
                     return d3.color(color).darker(0.5);
                 })
                 .attr('stroke-width', 3);
@@ -1156,7 +1215,7 @@
                 .attr('y', d => (d.y1 - d.y0) / 2 - 12)
                 .html(d => {
                     const nodeData = sankeyData.nodes.find(node => node.id === d.id);
-                    return nodeData && nodeData.style.icon ? nodeData.style.icon : 
+                    return nodeData && (nodeData.style?.icon || nodeData.icon) ? (nodeData.style?.icon || nodeData.icon) : 
                         '<svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="8" fill="white"/></svg>';
                 });
 
@@ -1213,11 +1272,11 @@
             nodes.select('.node-circle')
                 .attr('fill', d => {
                     const nodeData = sankeyData.nodes.find(node => node.id === d.id);
-                    return nodeData ? nodeData.style.color : config.nodeColor;
+                    return nodeData ? (nodeData.style?.color || nodeData.color || config.nodeColor) : config.nodeColor;
                 })
                 .attr('stroke', d => {
                     const nodeData = sankeyData.nodes.find(node => node.id === d.id);
-                    const color = nodeData ? nodeData.style.color : config.nodeColor;
+                    const color = nodeData ? (nodeData.style?.color || nodeData.color || config.nodeColor) : config.nodeColor;
                     return d3.color(color).darker(0.5);
                 });
         }
