@@ -39,11 +39,164 @@
             font-size: 1rem;
         }
 
-        .container {
+        .main-layout {
+            flex: 1;
+            display: flex;
+            height: calc(100vh - 120px);
+        }
+
+        .data-editor-panel {
+            width: 350px;
+            background: rgba(0, 0, 0, 0.03);
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .main-content {
             flex: 1;
             display: flex;
             flex-direction: column;
             padding: 20px;
+        }
+
+        .panel-header {
+            margin-bottom: 20px;
+        }
+
+        .panel-header h3 {
+            color: #333333;
+            margin-bottom: 15px;
+            font-weight: 400;
+        }
+
+        .file-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: #4a90e2;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #357abd;
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #219a52;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-small:hover {
+            background: #c0392b;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+            padding: 4px 8px;
+            font-size: 0.7rem;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .editor-section {
+            margin-bottom: 30px;
+        }
+
+        .editor-section h4 {
+            color: #333333;
+            margin-bottom: 10px;
+            font-weight: 500;
+            font-size: 1.1rem;
+        }
+
+        .data-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .data-item {
+            padding: 12px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            background: white;
+            margin-bottom: 2px;
+        }
+
+        .data-item:last-child {
+            border-bottom: none;
+        }
+
+        .data-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .data-item-title {
+            font-weight: 500;
+            color: #333333;
+        }
+
+        .data-item-fields {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 0.8rem;
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .field-group label {
+            color: rgba(0, 0, 0, 0.7);
+            font-size: 0.7rem;
+            margin-bottom: 2px;
+        }
+
+        .field-group input, .field-group select {
+            padding: 4px;
+            border: 1px solid rgba(0, 0, 0, 0.2);
+            border-radius: 3px;
+            font-size: 0.8rem;
+        }
+
+        .coordinate-fields {
+            grid-column: span 2;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
         }
 
         .controls {
@@ -270,49 +423,70 @@
         <p>Click on nodes to explore the flow relationships</p>
     </div>
 
-    <div class="container">
-        <div class="controls">
-            <h3>Customization Controls</h3>
-            <div class="control-group">
-                <div class="control-item">
-                    <label for="nodeWidth">Node Width</label>
-                    <input type="range" id="nodeWidth" min="10" max="50" value="20">
+    <div class="main-layout">
+        <!-- Data Editor Panel -->
+        <div class="data-editor-panel">
+            <div class="panel-header">
+                <h3>Data Editor</h3>
+                <div class="file-controls">
+                    <button id="loadFile" class="btn btn-primary">Load JSON</button>
+                    <button id="saveFile" class="btn btn-success">Save JSON</button>
+                    <input type="file" id="fileInput" accept=".json" style="display: none;">
                 </div>
-                <div class="control-item">
-                    <label for="nodePadding">Node Padding</label>
-                    <input type="range" id="nodePadding" min="5" max="30" value="10">
-                </div>
-                <div class="control-item">
-                    <label for="nodeColor">Node Color</label>
-                    <input type="color" id="nodeColor" value="#4a90e2">
-                </div>
-                <div class="control-item">
-                    <label for="linkOpacity">Link Opacity</label>
-                    <input type="range" id="linkOpacity" min="0.1" max="1" step="0.1" value="0.7">
-                </div>
-                <div class="control-item">
-                    <label for="animationSpeed">Animation Speed</label>
-                    <select id="animationSpeed">
-                        <option value="0.2">Fast</option>
-                        <option value="0.5" selected>Normal</option>
-                        <option value="1">Slow</option>
-                    </select>
-                </div>
-                <div class="control-item">
-                    <label>
-                        <input type="checkbox" id="coordinateMode" checked>
-                        Use Absolute Coordinates
-                    </label>
-                    <small style="color: rgba(0,0,0,0.6); font-size: 0.8rem; margin-top: 2px;">
-                        Enable node dragging
-                    </small>
-                </div>
+            </div>
+
+            <!-- Nodes Editor -->
+            <div class="editor-section">
+                <h4>Nodes</h4>
+                <button id="addNode" class="btn btn-small">+ Add Node</button>
+                <div id="nodesList" class="data-list"></div>
+            </div>
+
+            <!-- Links Editor -->
+            <div class="editor-section">
+                <h4>Links</h4>
+                <button id="addLink" class="btn btn-small">+ Add Link</button>
+                <div id="linksList" class="data-list"></div>
             </div>
         </div>
 
-        <div class="visualization-container">
-            <div id="sankey-diagram">
-                <div class="loading">Loading Sankey diagram...</div>
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <div class="controls">
+                <h3>Visualization Controls</h3>
+                <div class="control-group">
+                    <div class="control-item">
+                        <label for="nodeColor">Node Color</label>
+                        <input type="color" id="nodeColor" value="#4a90e2">
+                    </div>
+                    <div class="control-item">
+                        <label for="linkOpacity">Link Opacity</label>
+                        <input type="range" id="linkOpacity" min="0.1" max="1" step="0.1" value="0.7">
+                    </div>
+                    <div class="control-item">
+                        <label for="animationSpeed">Animation Speed</label>
+                        <select id="animationSpeed">
+                            <option value="0.2">Fast</option>
+                            <option value="0.5" selected>Normal</option>
+                            <option value="1">Slow</option>
+                        </select>
+                    </div>
+                    <div class="control-item">
+                        <label>
+                            <input type="checkbox" id="coordinateMode" checked>
+                            Use Absolute Coordinates
+                        </label>
+                        <small style="color: rgba(0,0,0,0.6); font-size: 0.8rem; margin-top: 2px;">
+                            Enable node dragging
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="visualization-container">
+                <div id="sankey-diagram">
+                    <div class="loading">Loading Sankey diagram...</div>
+                </div>
             </div>
         </div>
     </div>
@@ -359,16 +533,8 @@
 
         // Initialize control event listeners
         function initializeControls() {
-            document.getElementById('nodeWidth').addEventListener('input', function(e) {
-                config.nodeWidth = parseInt(e.target.value);
-                updateDiagram();
-            });
-
-            document.getElementById('nodePadding').addEventListener('input', function(e) {
-                config.nodePadding = parseInt(e.target.value);
-                updateDiagram();
-            });
-
+            // Skip nodeWidth and nodePadding as they're removed from UI
+            
             document.getElementById('nodeColor').addEventListener('input', function(e) {
                 config.nodeColor = e.target.value;
                 updateNodeColors();
@@ -392,6 +558,239 @@
                     updateDraggableNodes();
                 }, 100);
             });
+
+            // Data editor controls
+            document.getElementById('addNode').addEventListener('click', addNewNode);
+            document.getElementById('addLink').addEventListener('click', addNewLink);
+            document.getElementById('loadFile').addEventListener('click', () => {
+                document.getElementById('fileInput').click();
+            });
+            document.getElementById('saveFile').addEventListener('click', saveDataToFile);
+            document.getElementById('fileInput').addEventListener('change', loadDataFromFile);
+        }
+
+        // Data Editor Functions
+        function updateDataEditor() {
+            updateNodesList();
+            updateLinksList();
+        }
+
+        function updateNodesList() {
+            const nodesList = document.getElementById('nodesList');
+            nodesList.innerHTML = '';
+
+            sankeyData.nodes.forEach((node, index) => {
+                const nodeItem = createNodeItem(node, index);
+                nodesList.appendChild(nodeItem);
+            });
+        }
+
+        function createNodeItem(node, index) {
+            const div = document.createElement('div');
+            div.className = 'data-item';
+            div.innerHTML = `
+                <div class="data-item-header">
+                    <span class="data-item-title">${node.name}</span>
+                    <button class="btn btn-danger" onclick="deleteNode(${index})">Delete</button>
+                </div>
+                <div class="data-item-fields">
+                    <div class="field-group">
+                        <label>Name</label>
+                        <input type="text" value="${node.name}" onchange="updateNodeProperty(${index}, 'name', this.value)">
+                    </div>
+                    <div class="field-group">
+                        <label>Level</label>
+                        <input type="number" value="${node.level || 0}" onchange="updateNodeProperty(${index}, 'level', parseInt(this.value))">
+                    </div>
+                    <div class="coordinate-fields">
+                        <div class="field-group">
+                            <label>X Coordinate</label>
+                            <input type="number" value="${node.x || ''}" onchange="updateNodeProperty(${index}, 'x', this.value === '' ? undefined : parseFloat(this.value))" id="node-x-${index}">
+                        </div>
+                        <div class="field-group">
+                            <label>Y Coordinate</label>
+                            <input type="number" value="${node.y || ''}" onchange="updateNodeProperty(${index}, 'y', this.value === '' ? undefined : parseFloat(this.value))" id="node-y-${index}">
+                        </div>
+                    </div>
+                </div>
+            `;
+            return div;
+        }
+
+        function updateLinksList() {
+            const linksList = document.getElementById('linksList');
+            linksList.innerHTML = '';
+
+            sankeyData.links.forEach((link, index) => {
+                const linkItem = createLinkItem(link, index);
+                linksList.appendChild(linkItem);
+            });
+        }
+
+        function createLinkItem(link, index) {
+            const div = document.createElement('div');
+            div.className = 'data-item';
+            
+            // Create options for source and target dropdowns
+            const nodeOptions = sankeyData.nodes.map(node => 
+                `<option value="${node.id}" ${node.id === link.source ? 'selected' : ''}>${node.name}</option>`
+            ).join('');
+
+            const targetOptions = sankeyData.nodes.map(node => 
+                `<option value="${node.id}" ${node.id === link.target ? 'selected' : ''}>${node.name}</option>`
+            ).join('');
+
+            div.innerHTML = `
+                <div class="data-item-header">
+                    <span class="data-item-title">${link.source} → ${link.target}</span>
+                    <button class="btn btn-danger" onclick="deleteLink(${index})">Delete</button>
+                </div>
+                <div class="data-item-fields">
+                    <div class="field-group">
+                        <label>Source</label>
+                        <select onchange="updateLinkProperty(${index}, 'source', this.value)">
+                            ${nodeOptions}
+                        </select>
+                    </div>
+                    <div class="field-group">
+                        <label>Target</label>
+                        <select onchange="updateLinkProperty(${index}, 'target', this.value)">
+                            ${targetOptions}
+                        </select>
+                    </div>
+                    <div class="field-group">
+                        <label>Value</label>
+                        <input type="number" value="${link.value}" onchange="updateLinkProperty(${index}, 'value', parseFloat(this.value))">
+                    </div>
+                    <div class="field-group">
+                        <label>Color</label>
+                        <input type="color" value="${link.color || '#4a90e2'}" onchange="updateLinkProperty(${index}, 'color', this.value)">
+                    </div>
+                </div>
+            `;
+            return div;
+        }
+
+        function addNewNode() {
+            const newNode = {
+                id: `node_${Date.now()}`,
+                name: `New Node ${sankeyData.nodes.length + 1}`,
+                level: 0
+            };
+            
+            sankeyData.nodes.push(newNode);
+            updateDataEditor();
+            updateDiagram();
+        }
+
+        function addNewLink() {
+            if (sankeyData.nodes.length < 2) {
+                alert('You need at least 2 nodes to create a link');
+                return;
+            }
+
+            const newLink = {
+                source: sankeyData.nodes[0].id,
+                target: sankeyData.nodes[1].id,
+                value: 1,
+                color: '#4a90e2'
+            };
+            
+            sankeyData.links.push(newLink);
+            updateDataEditor();
+            updateDiagram();
+        }
+
+        function updateNodeProperty(index, property, value) {
+            sankeyData.nodes[index][property] = value;
+            updateDiagram();
+            
+            // Update the node item title if name changed
+            if (property === 'name') {
+                updateDataEditor();
+            }
+        }
+
+        function updateLinkProperty(index, property, value) {
+            sankeyData.links[index][property] = value;
+            updateDiagram();
+            updateDataEditor(); // Refresh to show updated source/target names
+        }
+
+        function deleteNode(index) {
+            const nodeId = sankeyData.nodes[index].id;
+            
+            // Remove node
+            sankeyData.nodes.splice(index, 1);
+            
+            // Remove associated links
+            sankeyData.links = sankeyData.links.filter(link => 
+                link.source !== nodeId && link.target !== nodeId
+            );
+            
+            updateDataEditor();
+            updateDiagram();
+        }
+
+        function deleteLink(index) {
+            sankeyData.links.splice(index, 1);
+            updateDataEditor();
+            updateDiagram();
+        }
+
+        // File operations
+        function saveDataToFile() {
+            const dataStr = JSON.stringify(sankeyData, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'sankey-data.json';
+            link.click();
+            
+            URL.revokeObjectURL(url);
+        }
+
+        function loadDataFromFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    // Validate data structure
+                    if (!data.nodes || !data.links || !Array.isArray(data.nodes) || !Array.isArray(data.links)) {
+                        throw new Error('Invalid data format');
+                    }
+                    
+                    sankeyData = data;
+                    updateDataEditor();
+                    updateDiagram();
+                    console.log('Data loaded successfully');
+                } catch (error) {
+                    alert('Error loading file: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+            
+            // Reset file input
+            event.target.value = '';
+        }
+
+        // Update node coordinates in data editor when dragged
+        function updateNodeCoordinatesInEditor(nodeId, x, y) {
+            const nodeIndex = sankeyData.nodes.findIndex(node => node.id === nodeId);
+            if (nodeIndex !== -1) {
+                // Update the input fields in the editor
+                const xInput = document.getElementById(`node-x-${nodeIndex}`);
+                const yInput = document.getElementById(`node-y-${nodeIndex}`);
+                
+                if (xInput) xInput.value = Math.round(x);
+                if (yInput) yInput.value = Math.round(y);
+            }
         }
 
         // Load data from JSON file
@@ -401,6 +800,7 @@
                 sankeyData = await response.json();
                 console.log('Loaded data:', sankeyData);
                 initializeDiagram();
+                updateDataEditor();
             } catch (error) {
                 console.error('Error loading data:', error);
                 document.getElementById('sankey-diagram').innerHTML = '<div class="error">Error loading data</div>';
@@ -1120,6 +1520,9 @@
                 originalNode.x = d.x0;
                 originalNode.y = d.y0;
                 console.log(`Updated node ${d.id} coordinates: (${d.x0}, ${d.y0})`);
+                
+                // Update the data editor with new coordinates
+                updateNodeCoordinatesInEditor(d.id, d.x0, d.y0);
             }
 
             // Cancel any pending animation frame
