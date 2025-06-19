@@ -491,6 +491,12 @@
                             Enable node dragging
                         </small>
                     </div>
+                    <div class="control-item">
+                        <button id="showAllBtn" class="btn btn-primary">Show All Nodes & Links</button>
+                        <small style="color: rgba(0,0,0,0.6); font-size: 0.8rem; margin-top: 2px;">
+                            Make all elements visible and draggable
+                        </small>
+                    </div>
                 </div>
             </div>
 
@@ -578,6 +584,7 @@
             });
             document.getElementById('saveFile').addEventListener('click', saveDataToFile);
             document.getElementById('fileInput').addEventListener('change', loadDataFromFile);
+            document.getElementById('showAllBtn').addEventListener('click', showAllNodesAndLinks);
         }
 
         // Data Editor Functions
@@ -659,9 +666,13 @@
                 `<option value="${node.id}" ${node.id === link.target ? 'selected' : ''}>${node.name}</option>`
             ).join('');
 
+            // Get readable names for source and target
+            const sourceName = sankeyData.nodes.find(n => n.id === link.source)?.name || link.source;
+            const targetName = sankeyData.nodes.find(n => n.id === link.target)?.name || link.target;
+            
             div.innerHTML = `
                 <div class="data-item-header">
-                    <span class="data-item-title">${link.source} → ${link.target}</span>
+                    <span class="data-item-title">${sourceName} → ${targetName}</span>
                     <button class="btn btn-danger" onclick="deleteLink(${index})">Delete</button>
                 </div>
                 <div class="data-item-fields">
@@ -699,15 +710,21 @@
         }
 
         function addNewNode() {
+            const nodeNumber = sankeyData.nodes.length + 1;
             const newNode = {
-                id: `node_${Date.now()}`,
-                name: `New Node ${sankeyData.nodes.length + 1}`,
+                id: `node_${nodeNumber}`,
+                name: `Node ${nodeNumber}`,
                 level: 0,
                 color: '#4a90e2',
-                description: 'New node description'
+                description: 'New node description',
+                visible: true
             };
             
             sankeyData.nodes.push(newNode);
+            
+            // Automatically add to visible nodes if we're showing all
+            visibleNodes.add(newNode.id);
+            
             updateDataEditor();
             updateDiagram();
         }
@@ -718,8 +735,9 @@
                 return;
             }
 
+            const linkNumber = sankeyData.links.length + 1;
             const newLink = {
-                id: `link_${Date.now()}`,
+                id: `link_${linkNumber}`,
                 source: sankeyData.nodes[0].id,
                 target: sankeyData.nodes[1].id,
                 value: 1,
@@ -735,12 +753,25 @@
             };
             
             sankeyData.links.push(newLink);
+            
+            // Automatically add to visible links
+            visibleLinks.add(newLink.id);
+            
+            // Also make sure both connected nodes are visible
+            visibleNodes.add(newLink.source);
+            visibleNodes.add(newLink.target);
+            
+            console.log('Added new link:', newLink);
+            console.log('Visible links now:', Array.from(visibleLinks));
+            
             updateDataEditor();
             updateDiagram();
         }
 
         function updateNodeProperty(index, property, value) {
             sankeyData.nodes[index][property] = value;
+            
+            // Always update the diagram to ensure changes are reflected
             updateDiagram();
             
             // Update the node item title if name changed
@@ -751,8 +782,15 @@
 
         function updateLinkProperty(index, property, value) {
             sankeyData.links[index][property] = value;
-            updateDiagram();
-            updateDataEditor(); // Refresh to show updated source/target names
+            
+            // For source/target changes, need full refresh
+            if (property === 'source' || property === 'target') {
+                updateDiagram();
+                updateDataEditor(); // Refresh to show updated source/target names
+            } else {
+                // For other properties like color, can update more efficiently
+                updateDiagram();
+            }
         }
 
         function updateLinkGradient(index, gradientProperty, value) {
@@ -844,6 +882,31 @@
                 if (xInput) xInput.value = Math.round(x);
                 if (yInput) yInput.value = Math.round(y);
             }
+        }
+
+        // Show all nodes and links
+        function showAllNodesAndLinks() {
+            // Make all nodes visible
+            sankeyData.nodes.forEach(node => {
+                visibleNodes.add(node.id);
+            });
+            
+            // Make all links visible
+            sankeyData.links.forEach(link => {
+                visibleLinks.add(link.id);
+            });
+            
+            console.log('Showing all nodes and links');
+            console.log('Visible nodes:', Array.from(visibleNodes));
+            console.log('Visible links:', Array.from(visibleLinks));
+            
+            // Update visibility
+            updateVisibility();
+            
+            // Update draggable state
+            setTimeout(() => {
+                updateDraggableNodes();
+            }, 100);
         }
 
         // Load data from JSON file
@@ -969,6 +1032,8 @@
 
         // Process data for d3-sankey format
         function processData(data) {
+            console.log('Processing data - nodes:', data.nodes.length, 'links:', data.links.length);
+            
             // Create a map of node IDs to indices
             const nodeMap = new Map();
             data.nodes.forEach((node, index) => {
@@ -994,21 +1059,28 @@
                     return null;
                 }
 
-                return {
+                const processedLink = {
                     ...d,
                     source: sourceIndex,
                     target: targetIndex,
                     value: d.value
                 };
+                
+                console.log('Processed link:', d.id, d.source, '->', d.target, 'as indices:', sourceIndex, '->', targetIndex);
+                return processedLink;
             }).filter(link => link !== null);
 
-            console.log('Processed data:', { nodes, links });
+            console.log('Processed data:', { nodes: nodes.length, links: links.length });
             return { nodes, links };
         }
 
         // Create gradient definitions
         function createGradients(defs, linksData) {
+            console.log('Creating gradients for', linksData.length, 'links');
+            
             linksData.forEach(link => {
+                console.log('Creating gradient for link:', link.id);
+                
                 const gradientId = `gradient-${link.id}`;
                 const gradient = defs.append('linearGradient')
                     .attr('id', gradientId)
@@ -1019,6 +1091,8 @@
                     start: link.color || '#4a90e2',
                     end: d3.color(link.color || '#4a90e2').darker(0.3)
                 };
+
+                console.log('Gradient colors for', link.id, ':', gradientData.start, '->', gradientData.end);
 
                 gradient.append('stop')
                     .attr('offset', '0%')
@@ -1108,6 +1182,9 @@
         }
 
         function drawLinks(g, sankeyLinks) {
+            console.log('Drawing links:', sankeyLinks.length, 'sankey links');
+            console.log('Original data links:', sankeyData.links.length);
+            
             const linkGroup = g.append('g')
                 .attr('class', 'links');
 
@@ -1122,6 +1199,7 @@
                     const linkData = sankeyData.links.find(link => 
                         link.source === sourceId && link.target === targetId
                     );
+                    console.log('Link fill for:', sourceId, '->', targetId, 'linkData:', linkData);
                     return linkData ? `url(#gradient-${linkData.id})` : '#999';
                 })
                 .attr('stroke', 'none')
@@ -1236,20 +1314,32 @@
             visibleNodes.clear();
             visibleLinks.clear();
 
-            sankeyData.interactionRules.initiallyVisible.forEach(nodeId => {
-                visibleNodes.add(nodeId);
-                
-                // Also add any links connected to initially visible nodes
-                sankeyData.links.forEach(link => {
-                    if (link.source === nodeId || link.target === nodeId) {
-                        // Check if the other end of the link should also be visible
-                        const otherNodeId = link.source === nodeId ? link.target : link.source;
-                        if (sankeyData.interactionRules.initiallyVisible.includes(otherNodeId)) {
-                            visibleLinks.add(link.id);
+            // Check if interactionRules exist, if not initialize with basic visibility
+            if (sankeyData.interactionRules && sankeyData.interactionRules.initiallyVisible) {
+                sankeyData.interactionRules.initiallyVisible.forEach(nodeId => {
+                    visibleNodes.add(nodeId);
+                    
+                    // Also add any links connected to initially visible nodes
+                    sankeyData.links.forEach(link => {
+                        if (link.source === nodeId || link.target === nodeId) {
+                            // Check if the other end of the link should also be visible
+                            const otherNodeId = link.source === nodeId ? link.target : link.source;
+                            if (sankeyData.interactionRules.initiallyVisible.includes(otherNodeId)) {
+                                visibleLinks.add(link.id);
+                            }
                         }
-                    }
+                    });
                 });
-            });
+            } else {
+                // If no interaction rules, make all nodes and links visible by default
+                console.log('No interaction rules found, showing all nodes and links');
+                sankeyData.nodes.forEach(node => {
+                    visibleNodes.add(node.id);
+                });
+                sankeyData.links.forEach(link => {
+                    visibleLinks.add(link.id);
+                });
+            }
 
             updateVisibility();
         }
@@ -1301,7 +1391,10 @@
         function revealConnectedNodes(nodeId) {
             console.log('Revealing nodes connected to:', nodeId);
             
-            const connectedNodeIds = sankeyData.interactionRules.progressiveDisclosure[nodeId] || [];
+            // Check if interaction rules exist
+            const connectedNodeIds = (sankeyData.interactionRules && sankeyData.interactionRules.progressiveDisclosure) 
+                ? (sankeyData.interactionRules.progressiveDisclosure[nodeId] || [])
+                : [];
             
             // Add connected nodes to visible set
             connectedNodeIds.forEach(id => {
