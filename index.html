@@ -1524,11 +1524,33 @@
             const source = d.source;
             const target = d.target;
             
-            // Get source and target positions (center of circular nodes)
-            const sourceX = source.x1;
-            const sourceY = source.y0 + (source.y1 - source.y0) / 2;
-            const targetX = target.x0;
-            const targetY = target.y0 + (target.y1 - target.y0) / 2;
+            // Find source and target node data to check if circles are hidden
+            const sourceNodeData = sankeyData.nodes.find(node => node.id === source.id);
+            const targetNodeData = sankeyData.nodes.find(node => node.id === target.id);
+            
+            // Calculate connection points based on whether circles are hidden
+            const nodeRadius = 30;
+            let sourceX, sourceY, targetX, targetY;
+            
+            if (sourceNodeData && sourceNodeData.hideCircle) {
+                // Connect to center of node when circle is hidden
+                sourceX = source.x0 + (source.x1 - source.x0) / 2;
+                sourceY = source.y0 + (source.y1 - source.y0) / 2;
+            } else {
+                // Connect to edge of circle when circle is visible
+                sourceX = source.x1;
+                sourceY = source.y0 + (source.y1 - source.y0) / 2;
+            }
+            
+            if (targetNodeData && targetNodeData.hideCircle) {
+                // Connect to center of node when circle is hidden
+                targetX = target.x0 + (target.x1 - target.x0) / 2;
+                targetY = target.y0 + (target.y1 - target.y0) / 2;
+            } else {
+                // Connect to edge of circle when circle is visible
+                targetX = target.x0;
+                targetY = target.y0 + (target.y1 - target.y0) / 2;
+            }
             
             // Calculate widths
             const minWidth = 2;
