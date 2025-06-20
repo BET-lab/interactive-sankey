@@ -444,6 +444,11 @@
             filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
         }
 
+        .node-interaction-area {
+            /* Uncomment the line below to visualize interaction areas during development */
+            /* fill: rgba(255, 0, 0, 0.1) !important; */
+        }
+
         /* Remove hover transform to prevent jittering */
 
         .node-circle {
@@ -1695,6 +1700,27 @@
                 .style('display', d => {
                     const nodeData = sankeyData.nodes.find(node => node.id === d.id);
                     return nodeData && nodeData.hideCircle ? 'none' : 'block';
+                });
+
+            // Add invisible interaction area for nodes with hidden circles
+            nodes.append('circle')
+                .attr('class', 'node-interaction-area')
+                .attr('cx', d => (d.x1 - d.x0) / 2)
+                .attr('cy', d => (d.y1 - d.y0) / 2)
+                .attr('r', d => {
+                    const nodeData = sankeyData.nodes.find(node => node.id === d.id);
+                    if (nodeData && nodeData.hideCircle) {
+                        // Use icon size or minimum interaction area
+                        const iconSize = nodeData.iconSize || 24;
+                        return Math.max(iconSize / 2, 20); // Minimum 20px radius for easy clicking
+                    }
+                    return 0; // No interaction area needed when circle is visible
+                })
+                .style('fill', 'transparent')
+                .style('stroke', 'none')
+                .style('pointer-events', d => {
+                    const nodeData = sankeyData.nodes.find(node => node.id === d.id);
+                    return nodeData && nodeData.hideCircle ? 'all' : 'none';
                 });
 
             // Add icons in the center of circular nodes
