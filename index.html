@@ -886,14 +886,17 @@
                     <div class="field-group">
                         <label>Color</label>
                         <input type="color" value="${link.color || '#4a90e2'}" onchange="updateLinkProperty(${index}, 'color', this.value)">
+                        <small style="color: #666; font-size: 11px; margin-top: 2px; display: block;">기본색 (그래디언트가 없을 때 사용)</small>
                     </div>
                     <div class="field-group">
                         <label>Gradient Start</label>
                         <input type="color" value="${link.style?.gradient?.start || link.gradient?.start || link.color || '#4a90e2'}" onchange="updateLinkGradient(${index}, 'start', this.value)">
+                        <small style="color: #666; font-size: 11px; margin-top: 2px; display: block;">그래디언트 시작색 (소스 노드 쪽)</small>
                     </div>
                     <div class="field-group">
                         <label>Gradient End</label>
                         <input type="color" value="${link.style?.gradient?.end || link.gradient?.end || d3.color(link.color || '#4a90e2').darker(0.3)}" onchange="updateLinkGradient(${index}, 'end', this.value)">
+                        <small style="color: #666; font-size: 11px; margin-top: 2px; display: block;">그래디언트 끝색 (타겟 노드 쪽)</small>
                     </div>
                 </div>
             `;
@@ -1498,7 +1501,11 @@
                 const gradientId = `gradient-${link.id}`;
                 const gradient = defs.append('linearGradient')
                     .attr('id', gradientId)
-                    .attr('gradientUnits', 'userSpaceOnUse');
+                    .attr('gradientUnits', 'objectBoundingBox') // 수정: 객체 비율 기준으로 변경
+                    .attr('x1', '0%')  // 시작점: 왼쪽
+                    .attr('y1', '0%')  // 시작점: 위쪽
+                    .attr('x2', '100%') // 끝점: 오른쪽
+                    .attr('y2', '0%');  // 끝점: 위쪽 (수평 그래디언트)
 
                 // Support both old structure (link.style.gradient) and new structure (link.gradient)
                 const gradientData = link.style?.gradient || link.gradient || {
