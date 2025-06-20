@@ -203,6 +203,14 @@
             font-size: 0.8rem;
         }
 
+        .appearance-fields {
+            grid-column: span 2;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
         .coordinate-fields {
             grid-column: span 2;
             display: grid;
@@ -425,6 +433,15 @@
             stroke-width: 5;
             filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.5));
             transition: none !important; /* Disable transitions during drag */
+        }
+
+        .node.dragging .node-icon {
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6));
+            transition: none !important;
+        }
+
+        .node:hover .node-icon {
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
         }
 
         /* Remove hover transform to prevent jittering */
@@ -785,6 +802,18 @@
                             </div>
                         </div>
                     </div>
+                    <div class="appearance-fields">
+                        <div class="field-group">
+                            <label>
+                                <input type="checkbox" ${node.hideCircle ? 'checked' : ''} onchange="updateNodeProperty(${index}, 'hideCircle', this.checked)">
+                                Hide Node Circle
+                            </label>
+                        </div>
+                        <div class="field-group">
+                            <label>Icon Size</label>
+                            <input type="number" min="12" max="100" value="${node.iconSize || 24}" onchange="updateNodeProperty(${index}, 'iconSize', parseInt(this.value))" step="2">
+                        </div>
+                    </div>
                     <div class="coordinate-fields">
                         <div class="field-group">
                             <label>X Coordinate</label>
@@ -1014,14 +1043,18 @@
             // Update preview
             const previewArea = document.getElementById(`icon-preview-${index}`);
             if (previewArea) {
+                const iconSize = sankeyData.nodes[index].iconSize || 24;
+                const previewSize = Math.min(iconSize, 32); // Limit preview size
+                
                 if (iconValue) {
                     if (iconValue.includes('<svg')) {
                         // Process SVG for preview
-                        const processedSvg = processSvgForIcon(iconValue);
+                        const processedSvg = processSvgForIcon(iconValue, previewSize);
                         previewArea.innerHTML = processedSvg;
                     } else {
                         // Text icon
-                        previewArea.innerHTML = `<span style="font-size: 18px; font-weight: bold;">${iconValue}</span>`;
+                        const fontSize = Math.max(12, previewSize * 0.75);
+                        previewArea.innerHTML = `<span style="font-size: ${fontSize}px; font-weight: bold;">${iconValue}</span>`;
                     }
                 } else {
                     previewArea.innerHTML = '<span class="no-icon">No icon</span>';
@@ -1033,7 +1066,7 @@
         }
 
         // Process SVG for use as node icon
-        function processSvgForIcon(svgContent) {
+        function processSvgForIcon(svgContent, iconSize = 24) {
             try {
                 // Clean the SVG content first
                 let cleanedSvg = svgContent.trim();
@@ -1058,8 +1091,8 @@
                 svgElement.style.height = '';
                 
                 // Set fixed size and ensure proper display
-                svgElement.setAttribute('width', '24');
-                svgElement.setAttribute('height', '24');
+                svgElement.setAttribute('width', iconSize.toString());
+                svgElement.setAttribute('height', iconSize.toString());
                 svgElement.style.display = 'block';
                 
                 // If no viewBox exists, try to create one from original dimensions or use default
@@ -1641,7 +1674,7 @@
                     .on('end', dragEnded)
                 );
 
-            // Add circular nodes instead of rectangles
+            // Add circular nodes instead of rectangles (conditionally based on hideCircle property)
             const nodeRadius = 30; // Fixed radius for circular nodes (should match sankey layout)
             
             nodes.append('circle')
@@ -1658,60 +1691,79 @@
                     const color = nodeData ? (nodeData.style?.color || nodeData.color || config.nodeColor) : config.nodeColor;
                     return d3.color(color).darker(0.5);
                 })
-                .attr('stroke-width', 3);
+                .attr('stroke-width', 3)
+                .style('display', d => {
+                    const nodeData = sankeyData.nodes.find(node => node.id === d.id);
+                    return nodeData && nodeData.hideCircle ? 'none' : 'block';
+                });
 
             // Add icons in the center of circular nodes
             nodes.each(function(d) {
                 const nodeElement = d3.select(this);
                 const nodeData = sankeyData.nodes.find(node => node.id === d.id);
                 const iconContent = nodeData && (nodeData.style?.icon || nodeData.icon) ? (nodeData.style?.icon || nodeData.icon) : '';
+                const iconSize = nodeData && nodeData.iconSize ? nodeData.iconSize : 24;
+                const halfSize = iconSize / 2;
                 
                 if (iconContent) {
                     if (iconContent.includes('<svg')) {
                         // SVG icon - use foreignObject with proper SVG formatting
-                        const processedSvg = processSvgForIcon(iconContent);
+                        const processedSvg = processSvgForIcon(iconContent, iconSize);
                         nodeElement.append('foreignObject')
                             .attr('class', 'node-icon node-icon-svg')
-                            .attr('width', 24)
-                            .attr('height', 24)
-                            .attr('x', (d.x1 - d.x0) / 2 - 12)
-                            .attr('y', (d.y1 - d.y0) / 2 - 12)
+                            .attr('width', iconSize)
+                            .attr('height', iconSize)
+                            .attr('x', (d.x1 - d.x0) / 2 - halfSize)
+                            .attr('y', (d.y1 - d.y0) / 2 - halfSize)
                             .style('overflow', 'visible')
                             .style('pointer-events', 'none')
                             .html(processedSvg);
                     } else {
                         // Text icon (emoji, symbol, or text) - use SVG text
+                        const fontSize = Math.max(12, iconSize * 0.75); // Scale font size with icon size
                         nodeElement.append('text')
                             .attr('class', 'node-icon node-icon-text')
                             .attr('x', (d.x1 - d.x0) / 2)
                             .attr('y', (d.y1 - d.y0) / 2)
                             .attr('text-anchor', 'middle')
                             .attr('dominant-baseline', 'central')
-                            .style('font-size', '18px')
+                            .style('font-size', `${fontSize}px`)
                             .style('font-weight', 'bold')
-                            .style('fill', 'white')
+                            .style('fill', nodeData && nodeData.hideCircle ? '#333333' : 'white')
                             .style('pointer-events', 'none')
                             .text(iconContent);
                     }
-                } else {
-                    // Default icon if no icon specified
+                } else if (!nodeData || !nodeData.hideCircle) {
+                    // Default icon if no icon specified and circle is visible
                     nodeElement.append('foreignObject')
                         .attr('class', 'node-icon node-icon-default')
-                        .attr('width', 24)
-                        .attr('height', 24)
-                        .attr('x', (d.x1 - d.x0) / 2 - 12)
-                        .attr('y', (d.y1 - d.y0) / 2 - 12)
+                        .attr('width', iconSize)
+                        .attr('height', iconSize)
+                        .attr('x', (d.x1 - d.x0) / 2 - halfSize)
+                        .attr('y', (d.y1 - d.y0) / 2 - halfSize)
                         .style('overflow', 'visible')
                         .style('pointer-events', 'none')
-                        .html('<svg viewBox="0 0 24 24" width="24" height="24" style="display: block;"><circle cx="12" cy="12" r="8" fill="white"/></svg>');
+                        .html(`<svg viewBox="0 0 24 24" width="${iconSize}" height="${iconSize}" style="display: block;"><circle cx="12" cy="12" r="8" fill="white"/></svg>`);
                 }
             });
 
-            // Add labels below circular nodes
+            // Add labels below circular nodes (adjust position based on whether circle is hidden)
             nodes.append('text')
                 .attr('class', 'node-label')
                 .attr('x', d => (d.x1 - d.x0) / 2)
-                .attr('y', d => (d.y1 - d.y0) / 2 + nodeRadius + 20)
+                .attr('y', d => {
+                    const nodeData = sankeyData.nodes.find(node => node.id === d.id);
+                    const iconSize = nodeData && nodeData.iconSize ? nodeData.iconSize : 24;
+                    const isCircleHidden = nodeData && nodeData.hideCircle;
+                    
+                    if (isCircleHidden) {
+                        // Position label below the icon
+                        return (d.y1 - d.y0) / 2 + (iconSize / 2) + 15;
+                    } else {
+                        // Position label below the circle
+                        return (d.y1 - d.y0) / 2 + nodeRadius + 20;
+                    }
+                })
                 .attr('text-anchor', 'middle')
                 .text(d => d.name)
                 .style('font-size', '12px')
