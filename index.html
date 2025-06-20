@@ -1199,6 +1199,7 @@
 
         function updateLinkProperty(index, property, value) {
             sankeyData.links[index][property] = value;
+            console.log('Updated link property:', property, 'to:', value, 'for link:', sankeyData.links[index].id);
             
             // For source/target changes, need full refresh
             if (property === 'source' || property === 'target') {
@@ -1206,12 +1207,14 @@
                 updateDataEditor(); // Refresh to show updated source/target names
             } else {
                 // For other properties like color, can update more efficiently
+                console.log('Triggering diagram update for link property change');
                 updateDiagram();
             }
         }
 
         function updateLinkGradient(index, gradientProperty, value) {
             const link = sankeyData.links[index];
+            console.log('Updating link gradient:', link.id, gradientProperty, 'to:', value);
             
             // Ensure gradient structure exists
             if (!link.style) {
@@ -1222,6 +1225,8 @@
             }
             
             link.style.gradient[gradientProperty] = value;
+            console.log('Link gradient updated:', link.style.gradient);
+            console.log('Triggering diagram update for gradient change');
             updateDiagram();
         }
 
@@ -1493,12 +1498,16 @@
 
         // Create gradient definitions
         function createGradients(defs, linksData) {
-            console.log('Creating gradients for', linksData.length, 'links');
+            console.log('=== Creating gradients for', linksData.length, 'links ===');
             
             linksData.forEach(link => {
-                console.log('Creating gradient for link:', link.id);
+                console.log('Creating gradient for link:', link.id, 'source:', link.source, 'target:', link.target);
                 
                 const gradientId = `gradient-${link.id}`;
+                
+                // Remove existing gradient if it exists
+                defs.select(`#${gradientId}`).remove();
+                
                 const gradient = defs.append('linearGradient')
                     .attr('id', gradientId)
                     .attr('gradientUnits', 'objectBoundingBox') // 수정: 객체 비율 기준으로 변경
@@ -1523,6 +1532,8 @@
                     .attr('offset', '100%')
                     .attr('stop-color', gradientData.end);
             });
+            
+            console.log('=== Gradients creation complete ===');
         }
 
         // Draw links
@@ -1637,19 +1648,73 @@
                 .attr('class', 'link')
                 .attr('d', createVariableWidthLink)
                 .attr('fill', d => {
-                    const sourceId = sankeyData.nodes[d.source.index || d.source]?.id;
-                    const targetId = sankeyData.nodes[d.target.index || d.target]?.id;
+                    // Get source and target IDs with improved logic
+                    let sourceId, targetId;
+                    
+                    // Handle different D3 data structures
+                    if (typeof d.source === 'object') {
+                        sourceId = d.source.id;
+                    } else if (typeof d.source === 'number') {
+                        sourceId = sankeyData.nodes[d.source]?.id;
+                    } else {
+                        sourceId = d.source;
+                    }
+                    
+                    if (typeof d.target === 'object') {
+                        targetId = d.target.id;
+                    } else if (typeof d.target === 'number') {
+                        targetId = sankeyData.nodes[d.target]?.id;
+                    } else {
+                        targetId = d.target;
+                    }
+                    
+                    // Find matching link in original data
                     const linkData = sankeyData.links.find(link => 
                         link.source === sourceId && link.target === targetId
                     );
-                    console.log('Link fill for:', sourceId, '->', targetId, 'linkData:', linkData);
-                    return linkData ? `url(#gradient-${linkData.id})` : '#999';
+                    
+                    // Enhanced debugging
+                    if (!linkData) {
+                        console.warn('❌ No linkData found for:', sourceId, '->', targetId);
+                        console.log('Available links:', sankeyData.links.map(l => `${l.source} -> ${l.target}`));
+                        console.log('D3 source type:', typeof d.source, 'd.source:', d.source);
+                        console.log('D3 target type:', typeof d.target, 'd.target:', d.target);
+                        console.log('Resolved sourceId:', sourceId, 'targetId:', targetId);
+                    } else {
+                        console.log('✅ Link fill for:', sourceId, '->', targetId, 'using gradient:', `gradient-${linkData.id}`);
+                    }
+                    
+                    if (linkData && (linkData.style?.gradient || linkData.gradient)) {
+                        return `url(#gradient-${linkData.id})`;
+                    } else if (linkData && linkData.color) {
+                        return linkData.color;
+                    } else {
+                        console.warn('⚠️ Using fallback color #999 for link:', sourceId, '->', targetId);
+                        return '#999';
+                    }
                 })
                 .attr('stroke', 'none')
                 .attr('opacity', config.linkOpacity)
                 .classed('link-hidden', d => {
-                    const sourceId = sankeyData.nodes[d.source.index || d.source]?.id;
-                    const targetId = sankeyData.nodes[d.target.index || d.target]?.id;
+                    // Get source and target IDs with improved logic
+                    let sourceId, targetId;
+                    
+                    if (typeof d.source === 'object') {
+                        sourceId = d.source.id;
+                    } else if (typeof d.source === 'number') {
+                        sourceId = sankeyData.nodes[d.source]?.id;
+                    } else {
+                        sourceId = d.source;
+                    }
+                    
+                    if (typeof d.target === 'object') {
+                        targetId = d.target.id;
+                    } else if (typeof d.target === 'number') {
+                        targetId = sankeyData.nodes[d.target]?.id;
+                    } else {
+                        targetId = d.target;
+                    }
+                    
                     const linkData = sankeyData.links.find(link => 
                         link.source === sourceId && link.target === targetId
                     );
