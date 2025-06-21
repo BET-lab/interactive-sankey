@@ -493,11 +493,30 @@
 
         .link {
             opacity: 0.7;
-            transition: stroke-dashoffset 0.8s ease-in-out, opacity 0.3s ease;
+            transition: opacity 0.3s ease;
         }
 
         .link.no-transition {
             transition: none !important;
+        }
+
+        .link.drawing {
+            clip-path: inset(0 100% 0 0);
+            animation: revealLinkFromLeft 0.8s ease-out forwards;
+        }
+
+        @keyframes revealLinkFromLeft {
+            0% {
+                clip-path: inset(0 100% 0 0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.7;
+            }
+            100% {
+                clip-path: inset(0 0 0 0);
+                opacity: 0.7;
+            }
         }
 
         /* Link hover handled via JavaScript to prevent conflicts */
@@ -1635,7 +1654,7 @@
             return path;
         }
 
-        function drawLinks(g, sankeyLinks) {
+                function drawLinks(g, sankeyLinks) {
             console.log('Drawing links:', sankeyLinks.length, 'sankey links');
             console.log('Original data links:', sankeyData.links.length);
             
@@ -1694,15 +1713,11 @@
                     }
                 })
                 .attr('stroke', 'none')
-                .attr('opacity', config.linkOpacity)
-                .each(function(d) {
-                    // Calculate path length for each link to set proper dash array
-                    const pathLength = this.getTotalLength();
-                    d3.select(this)
-                        .style('stroke-dasharray', pathLength)
-                        .style('stroke-dashoffset', pathLength); // Start hidden
-                })
-                .classed('link-hidden', d => {
+                .attr('opacity', 0) // Start completely hidden
+                .style('clip-path', 'inset(0 100% 0 0)') // Start with right side clipped
+
+            // Apply additional properties to link containers
+            links.classed('link-hidden', d => {
                     // Get source and target IDs with improved logic
                     let sourceId, targetId;
                     
@@ -2107,8 +2122,8 @@
                         
                         return opacity;
                     })
-                    .style('stroke-dashoffset', function(d) {
-                        // Drawing animation: animate stroke-dashoffset from path length to 0
+                    .each(function(d) {
+                        // Drawing animation: animate from left to right
                         let sourceId, targetId;
                         
                         if (typeof d.source === 'object') {
@@ -2127,12 +2142,24 @@
                             link.source === sourceId && link.target === targetId
                         );
                         
+                        const linkElement = d3.select(this);
+                        
                         if (linkData && visibleLinks.has(linkData.id)) {
-                            return 0; // Animate to fully visible
+                            // Remove any existing animation classes first
+                            linkElement.classed('drawing', false);
+                            
+                            // Add drawing animation class after a brief delay
+                            setTimeout(() => {
+                                linkElement
+                                    .style('opacity', config.linkOpacity)
+                                    .classed('drawing', true);
+                            }, 50);
                         } else {
-                            // Get the current path element's length
-                            const pathLength = this.getTotalLength();
-                            return pathLength; // Keep hidden
+                            // Hide the link
+                            linkElement
+                                .classed('drawing', false)
+                                .style('opacity', 0)
+                                .style('clip-path', 'inset(0 100% 0 0)');
                         }
                     })
                     .style('pointer-events', d => {
@@ -2266,10 +2293,13 @@
             // Add visual feedback
             d3.select(this).classed('dragging', true);
             
-            // Disable transitions on all links during drag for immediate response
+            // Disable transitions and animations on all links during drag
             if (links) {
                 links.classed('no-transition', true)
-                    .style('transition', 'none'); // Disable all transitions including stroke-dashoffset
+                    .classed('drawing', false)
+                    .style('animation', 'none')
+                    .style('transition', 'none')
+                    .style('clip-path', 'inset(0 0 0 0)'); // Show fully during drag
             }
             
             console.log(`Started dragging node: ${d.id} at (${d.x0}, ${d.y0})`);
@@ -2341,7 +2371,9 @@
             // Re-enable transitions on all links after drag
             if (links) {
                 links.classed('no-transition', false)
-                    .style('transition', null); // Reset to CSS default (stroke-dashoffset animation)
+                    .style('animation', null)
+                    .style('transition', null)
+                    .style('clip-path', null); // Reset clip-path
             }
 
             // Update the original data with new coordinates
@@ -2370,17 +2402,22 @@
             if (!links) return;
 
             if (isDragging) {
-                // During drag: immediate update with no transitions
+                // During drag: immediate update with no transitions or animations
                 links
                     .interrupt() // Stop any ongoing transitions
                     .classed('no-transition', true)
+                    .classed('drawing', false)
+                    .style('animation', 'none')
                     .style('transition', 'none')
+                    .style('clip-path', 'inset(0 0 0 0)') // Show fully during drag
                     .attr('d', createVariableWidthLink);
             } else {
                 // After drag: allow smooth transitions for settling
                 links
                     .classed('no-transition', false)
-                    .style('transition', null) // Reset to CSS default
+                    .style('animation', null)
+                    .style('transition', null)
+                    .style('clip-path', null) // Reset clip-path
                     .attr('d', createVariableWidthLink);
             }
         }
