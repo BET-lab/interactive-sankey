@@ -493,7 +493,7 @@
 
         .link {
             opacity: 0.7;
-            transition: all 0.3s ease;
+            transition: stroke-dashoffset 0.8s ease-in-out, opacity 0.3s ease;
         }
 
         .link.no-transition {
@@ -1695,6 +1695,13 @@
                 })
                 .attr('stroke', 'none')
                 .attr('opacity', config.linkOpacity)
+                .each(function(d) {
+                    // Calculate path length for each link to set proper dash array
+                    const pathLength = this.getTotalLength();
+                    d3.select(this)
+                        .style('stroke-dasharray', pathLength)
+                        .style('stroke-dashoffset', pathLength); // Start hidden
+                })
                 .classed('link-hidden', d => {
                     // Get source and target IDs with improved logic
                     let sourceId, targetId;
@@ -1744,6 +1751,7 @@
                 .enter().append('g')
                 .attr('class', 'node')
                 .attr('transform', d => `translate(${d.x0},${d.y0})`)
+                .style('opacity', 0) // Start hidden
                 .classed('node-hidden', d => {
                     const nodeData = sankeyData.nodes.find(node => node.id === d.id);
                     return nodeData ? !nodeData.visible : true;
@@ -2044,97 +2052,135 @@
 
             isAnimating = true;
 
-            // Update node visibility
+            // Phase 1: Update node visibility (nodes appear first)
             const nodeTransition = nodes.transition()
-                .duration(animationDuration)
+                .duration(animationDuration * 0.6) // Nodes animate faster
                 .style('opacity', d => visibleNodes.has(d.id) ? 1 : 0.1)
                 .style('pointer-events', d => visibleNodes.has(d.id) ? 'all' : 'none');
 
-            // Update link visibility
+            // Phase 2: Update link visibility (links appear after nodes with drawing animation)
             let linksProcessed = 0;
             let linksVisible = 0;
-            const linkTransition = links.transition()
-                .duration(animationDuration)
-                .style('opacity', d => {
-                    linksProcessed++;
-                    
-                    // Get source and target IDs from D3 processed data
-                    let sourceId, targetId;
-                    
-                    if (typeof d.source === 'object') {
-                        sourceId = d.source.id;
-                    } else {
-                        sourceId = sankeyData.nodes[d.source]?.id;
-                    }
-                    
-                    if (typeof d.target === 'object') {
-                        targetId = d.target.id;
-                    } else {
-                        targetId = sankeyData.nodes[d.target]?.id;
-                    }
-                    
-                    // Find matching link in original data
-                    const linkData = sankeyData.links.find(link => 
-                        link.source === sourceId && link.target === targetId
-                    );
-                    
-                    if (!linkData) {
-                        console.log('⚠️ No link data found for:', sourceId, '->', targetId);
-                        return 0;
-                    }
-                    
-                    const isVisible = visibleLinks.has(linkData.id);
-                    const opacity = isVisible ? config.linkOpacity : 0;
-                    
-                    if (isVisible) {
-                        linksVisible++;
-                        console.log('✓ Link visible:', linkData.id, '(', sourceId, '->', targetId, ') opacity:', opacity);
-                    } else {
-                        console.log('- Link hidden:', linkData.id, '(', sourceId, '->', targetId, ') opacity:', opacity);
-                    }
-                    
-                    return opacity;
-                })
-                .style('pointer-events', d => {
-                    // Get source and target IDs from D3 processed data
-                    let sourceId, targetId;
-                    
-                    if (typeof d.source === 'object') {
-                        sourceId = d.source.id;
-                    } else {
-                        sourceId = sankeyData.nodes[d.source]?.id;
-                    }
-                    
-                    if (typeof d.target === 'object') {
-                        targetId = d.target.id;
-                    } else {
-                        targetId = sankeyData.nodes[d.target]?.id;
-                    }
-                    
-                    // Find matching link in original data
-                    const linkData = sankeyData.links.find(link => 
-                        link.source === sourceId && link.target === targetId
-                    );
-                    
-                    if (!linkData) return 'none';
-                    return visibleLinks.has(linkData.id) ? 'all' : 'none';
-                });
 
-            // Reset animation flag when both transitions complete
-            Promise.all([nodeTransition.end(), linkTransition.end()])
-                .then(() => {
-                    console.log('Visibility update complete:', linksVisible, '/', linksProcessed, 'links visible');
-                    console.log('=== End visibility update ===');
-                    isAnimating = false;
-                    // Update draggable state after visibility changes
-                    updateDraggableNodes();
-                })
-                .catch(() => {
-                    console.log('Visibility update completed with interruption');
-                    console.log('=== End visibility update ===');
-                    isAnimating = false;
-                    updateDraggableNodes();
-                });
+            // Wait for nodes to complete before starting link animation
+            nodeTransition.end().then(() => {
+                const linkTransition = links.transition()
+                    .delay(animationDuration * 0.2) // Small delay after nodes complete
+                    .duration(animationDuration * 0.8) // Longer duration for drawing effect
+                    .style('opacity', d => {
+                        linksProcessed++;
+                        
+                        // Get source and target IDs from D3 processed data
+                        let sourceId, targetId;
+                        
+                        if (typeof d.source === 'object') {
+                            sourceId = d.source.id;
+                        } else {
+                            sourceId = sankeyData.nodes[d.source]?.id;
+                        }
+                        
+                        if (typeof d.target === 'object') {
+                            targetId = d.target.id;
+                        } else {
+                            targetId = sankeyData.nodes[d.target]?.id;
+                        }
+                        
+                        // Find matching link in original data
+                        const linkData = sankeyData.links.find(link => 
+                            link.source === sourceId && link.target === targetId
+                        );
+                        
+                        if (!linkData) {
+                            console.log('⚠️ No link data found for:', sourceId, '->', targetId);
+                            return 0;
+                        }
+                        
+                        const isVisible = visibleLinks.has(linkData.id);
+                        const opacity = isVisible ? config.linkOpacity : 0;
+                        
+                        if (isVisible) {
+                            linksVisible++;
+                            console.log('✓ Link visible:', linkData.id, '(', sourceId, '->', targetId, ') opacity:', opacity);
+                        } else {
+                            console.log('- Link hidden:', linkData.id, '(', sourceId, '->', targetId, ') opacity:', opacity);
+                        }
+                        
+                        return opacity;
+                    })
+                    .style('stroke-dashoffset', function(d) {
+                        // Drawing animation: animate stroke-dashoffset from path length to 0
+                        let sourceId, targetId;
+                        
+                        if (typeof d.source === 'object') {
+                            sourceId = d.source.id;
+                        } else {
+                            sourceId = sankeyData.nodes[d.source]?.id;
+                        }
+                        
+                        if (typeof d.target === 'object') {
+                            targetId = d.target.id;
+                        } else {
+                            targetId = sankeyData.nodes[d.target]?.id;
+                        }
+                        
+                        const linkData = sankeyData.links.find(link => 
+                            link.source === sourceId && link.target === targetId
+                        );
+                        
+                        if (linkData && visibleLinks.has(linkData.id)) {
+                            return 0; // Animate to fully visible
+                        } else {
+                            // Get the current path element's length
+                            const pathLength = this.getTotalLength();
+                            return pathLength; // Keep hidden
+                        }
+                    })
+                    .style('pointer-events', d => {
+                        // Get source and target IDs from D3 processed data
+                        let sourceId, targetId;
+                        
+                        if (typeof d.source === 'object') {
+                            sourceId = d.source.id;
+                        } else {
+                            sourceId = sankeyData.nodes[d.source]?.id;
+                        }
+                        
+                        if (typeof d.target === 'object') {
+                            targetId = d.target.id;
+                        } else {
+                            targetId = sankeyData.nodes[d.target]?.id;
+                        }
+                        
+                        // Find matching link in original data
+                        const linkData = sankeyData.links.find(link => 
+                            link.source === sourceId && link.target === targetId
+                        );
+                        
+                        if (!linkData) return 'none';
+                        return visibleLinks.has(linkData.id) ? 'all' : 'none';
+                    });
+
+                // Reset animation flag when link transitions complete
+                linkTransition.end()
+                    .then(() => {
+                        console.log('Visibility update complete:', linksVisible, '/', linksProcessed, 'links visible');
+                        console.log('=== End visibility update ===');
+                        isAnimating = false;
+                        // Update draggable state after visibility changes
+                        updateDraggableNodes();
+                    })
+                    .catch(() => {
+                        console.log('Visibility update completed with interruption');
+                        console.log('=== End visibility update ===');
+                        isAnimating = false;
+                        updateDraggableNodes();
+                    });
+            }).catch(() => {
+                // If node transition fails, still reset animation state
+                console.log('Node transition interrupted');
+                isAnimating = false;
+                updateDraggableNodes();
+            });
         }
 
         // Tooltip functions
@@ -2222,7 +2268,8 @@
             
             // Disable transitions on all links during drag for immediate response
             if (links) {
-                links.classed('no-transition', true);
+                links.classed('no-transition', true)
+                    .style('transition', 'none'); // Disable all transitions including stroke-dashoffset
             }
             
             console.log(`Started dragging node: ${d.id} at (${d.x0}, ${d.y0})`);
@@ -2293,7 +2340,8 @@
 
             // Re-enable transitions on all links after drag
             if (links) {
-                links.classed('no-transition', false);
+                links.classed('no-transition', false)
+                    .style('transition', null); // Reset to CSS default (stroke-dashoffset animation)
             }
 
             // Update the original data with new coordinates
@@ -2326,11 +2374,13 @@
                 links
                     .interrupt() // Stop any ongoing transitions
                     .classed('no-transition', true)
+                    .style('transition', 'none')
                     .attr('d', createVariableWidthLink);
             } else {
                 // After drag: allow smooth transitions for settling
                 links
                     .classed('no-transition', false)
+                    .style('transition', null) // Reset to CSS default
                     .attr('d', createVariableWidthLink);
             }
         }
