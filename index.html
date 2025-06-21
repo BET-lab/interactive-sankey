@@ -703,6 +703,7 @@
         // Progressive disclosure state
         const visibleNodes = new Set();
         const visibleLinks = new Set();
+        const previouslyVisibleLinks = new Set(); // Track previously visible links
 
         // Global references for updates
         let sankeyData = null;
@@ -1918,6 +1919,7 @@
             // Set initial visibility based on data
             visibleNodes.clear();
             visibleLinks.clear();
+            previouslyVisibleLinks.clear();
 
             // Check if interactionRules exist, if not initialize with basic visibility
             if (sankeyData.interactionRules && sankeyData.interactionRules.initiallyVisible) {
@@ -2064,6 +2066,16 @@
             console.log('=== Updating visibility ===');
             console.log('Current visible nodes:', Array.from(visibleNodes));
             console.log('Current visible links:', Array.from(visibleLinks));
+            console.log('Previously visible links:', Array.from(previouslyVisibleLinks));
+
+            // Find newly visible links (links that are visible now but weren't before)
+            const newlyVisibleLinks = new Set();
+            visibleLinks.forEach(linkId => {
+                if (!previouslyVisibleLinks.has(linkId)) {
+                    newlyVisibleLinks.add(linkId);
+                }
+            });
+            console.log('Newly visible links:', Array.from(newlyVisibleLinks));
 
             isAnimating = true;
 
@@ -2123,7 +2135,7 @@
                         return opacity;
                     })
                     .each(function(d) {
-                        // Drawing animation: animate from left to right
+                        // Drawing animation: animate from left to right (only for newly visible links)
                         let sourceId, targetId;
                         
                         if (typeof d.source === 'object') {
@@ -2145,15 +2157,26 @@
                         const linkElement = d3.select(this);
                         
                         if (linkData && visibleLinks.has(linkData.id)) {
-                            // Remove any existing animation classes first
-                            linkElement.classed('drawing', false);
+                            // Check if this is a newly visible link
+                            const isNewlyVisible = newlyVisibleLinks.has(linkData.id);
                             
-                            // Add drawing animation class after a brief delay
-                            setTimeout(() => {
+                            if (isNewlyVisible) {
+                                // Remove any existing animation classes first
+                                linkElement.classed('drawing', false);
+                                
+                                // Add drawing animation class after a brief delay
+                                setTimeout(() => {
+                                    linkElement
+                                        .style('opacity', config.linkOpacity)
+                                        .classed('drawing', true);
+                                }, 50);
+                            } else {
+                                // For previously visible links, just ensure they're visible without animation
                                 linkElement
+                                    .classed('drawing', false)
                                     .style('opacity', config.linkOpacity)
-                                    .classed('drawing', true);
-                            }, 50);
+                                    .style('clip-path', 'inset(0 0 0 0)'); // Fully visible
+                            }
                         } else {
                             // Hide the link
                             linkElement
@@ -2192,6 +2215,11 @@
                     .then(() => {
                         console.log('Visibility update complete:', linksVisible, '/', linksProcessed, 'links visible');
                         console.log('=== End visibility update ===');
+                        
+                        // Update previously visible links for next time
+                        previouslyVisibleLinks.clear();
+                        visibleLinks.forEach(linkId => previouslyVisibleLinks.add(linkId));
+                        
                         isAnimating = false;
                         // Update draggable state after visibility changes
                         updateDraggableNodes();
@@ -2199,6 +2227,11 @@
                     .catch(() => {
                         console.log('Visibility update completed with interruption');
                         console.log('=== End visibility update ===');
+                        
+                        // Update previously visible links for next time
+                        previouslyVisibleLinks.clear();
+                        visibleLinks.forEach(linkId => previouslyVisibleLinks.add(linkId));
+                        
                         isAnimating = false;
                         updateDraggableNodes();
                     });
