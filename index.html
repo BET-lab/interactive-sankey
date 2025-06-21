@@ -196,11 +196,18 @@
             margin-bottom: 2px;
         }
 
-        .field-group input, .field-group select {
+        .field-group input, .field-group select, .field-group textarea {
             padding: 4px;
             border: 1px solid rgba(0, 0, 0, 0.2);
             border-radius: 3px;
             font-size: 0.8rem;
+        }
+
+        .field-group textarea {
+            resize: vertical;
+            min-height: 40px;
+            font-family: inherit;
+            line-height: 1.4;
         }
 
         .appearance-fields {
@@ -788,7 +795,8 @@
                 <div class="data-item-fields">
                     <div class="field-group">
                         <label>Name</label>
-                        <input type="text" value="${node.name}" onchange="updateNodeProperty(${index}, 'name', this.value)">
+                        <textarea rows="2" placeholder="Node name (use Enter for new lines)" onchange="updateNodeProperty(${index}, 'name', this.value)">${node.name}</textarea>
+                        <small style="color: #666; font-size: 11px; margin-top: 2px; display: block;">줄바꿈(Enter)을 사용하여 여러 줄 텍스트를 만들 수 있습니다</small>
                     </div>
                     <div class="field-group">
                         <label>Level</label>
@@ -1892,7 +1900,7 @@
             });
 
             // Add labels below circular nodes (adjust position based on whether circle is hidden)
-            nodes.append('text')
+            const nodeLabels = nodes.append('text')
                 .attr('class', 'node-label')
                 .attr('x', d => (d.x1 - d.x0) / 2)
                 .attr('y', d => {
@@ -1909,9 +1917,27 @@
                     }
                 })
                 .attr('text-anchor', 'middle')
-                .text(d => d.name)
                 .style('font-size', '12px')
                 .style('fill', '#333333');
+
+            // Add text content with support for multiple lines
+            nodeLabels.each(function(d) {
+                const textElement = d3.select(this);
+                const lines = d.name.split('\n'); // Split by newline character
+                
+                if (lines.length === 1) {
+                    // Single line - use simple text
+                    textElement.text(d.name);
+                } else {
+                    // Multiple lines - use tspan elements
+                    lines.forEach((line, index) => {
+                        textElement.append('tspan')
+                            .attr('x', (d.x1 - d.x0) / 2) // Keep x position for each line
+                            .attr('dy', index === 0 ? 0 : '1.2em') // First line no offset, others 1.2em down
+                            .text(line);
+                    });
+                }
+            });
         }
 
         // Initialize progressive disclosure
