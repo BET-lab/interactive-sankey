@@ -774,6 +774,20 @@
             updateLinksList();
         }
 
+        // Calculate actual link width that would be rendered
+        function calculateActualLinkWidth(link) {
+            if (link.width !== undefined) {
+                // User has explicitly set width
+                return Math.max(1, Math.min(50, link.width));
+            } else {
+                // Calculate width based on value (same logic as in createVariableWidthLink)
+                const minWidth = 2;
+                const maxWidth = 20;
+                const calculatedWidth = Math.max(minWidth, Math.min(maxWidth, link.value * 0.2));
+                return Math.round(calculatedWidth * 10) / 10; // Round to 1 decimal place
+            }
+        }
+
         function updateNodesList() {
             const nodesList = document.getElementById('nodesList');
             nodesList.innerHTML = '';
@@ -903,6 +917,9 @@
             const sourceName = sankeyData.nodes.find(n => n.id === link.source)?.name || link.source;
             const targetName = sankeyData.nodes.find(n => n.id === link.target)?.name || link.target;
             
+            // Calculate actual rendering width
+            const actualWidth = calculateActualLinkWidth(link);
+            
             div.innerHTML = `
                 <div class="data-item-header">
                     <span class="data-item-title">${sourceName} → ${targetName}</span>
@@ -924,6 +941,12 @@
                     <div class="field-group">
                         <label>Value</label>
                         <input type="number" value="${link.value}" onchange="updateLinkProperty(${index}, 'value', parseFloat(this.value))">
+                        <small style="color: #666; font-size: 11px; margin-top: 2px; display: block;">플로우 값 (데이터 기준)</small>
+                    </div>
+                    <div class="field-group">
+                        <label>Width</label>
+                        <input type="number" min="1" max="50" value="${actualWidth}" onchange="updateLinkProperty(${index}, 'width', parseFloat(this.value))">
+                        <small style="color: #666; font-size: 11px; margin-top: 2px; display: block;">링크 두께 (1-50px) ${link.width ? '' : '- 자동 계산됨'}</small>
                     </div>
                     <div class="field-group">
                         <label>Color</label>
@@ -977,6 +1000,7 @@
                 source: sankeyData.nodes[0].id,
                 target: sankeyData.nodes[1].id,
                 value: 1,
+                width: 5,  // Default width
                 color: '#4a90e2',
                 visible: true,
                 description: 'New link description',
@@ -1322,6 +1346,10 @@
                     }
                     
                     sankeyData = data;
+                    
+                    // Normalize link data - add width property if missing
+                    normalizeLinkData();
+                    
                     updateDataEditor();
                     updateDiagram();
                     console.log('Data loaded successfully');
@@ -1379,12 +1407,30 @@
                 const response = await fetch('data.json');
                 sankeyData = await response.json();
                 console.log('Loaded data:', sankeyData);
+                
+                // Normalize link data - add width property if missing
+                normalizeLinkData();
+                
                 initializeDiagram();
                 updateDataEditor();
             } catch (error) {
                 console.error('Error loading data:', error);
                 document.getElementById('sankey-diagram').innerHTML = '<div class="error">Error loading data</div>';
             }
+        }
+
+        // Normalize link data to ensure all links have width property
+        function normalizeLinkData() {
+            sankeyData.links.forEach(link => {
+                if (link.width === undefined) {
+                    // Calculate width based on value (same logic as calculateActualLinkWidth)
+                    const minWidth = 2;
+                    const maxWidth = 20;
+                    const calculatedWidth = Math.max(minWidth, Math.min(maxWidth, link.value * 0.2));
+                    link.width = Math.round(calculatedWidth * 10) / 10; // Round to 1 decimal place
+                    console.log(`Normalized link ${link.id}: calculated width ${link.width} from value ${link.value}`);
+                }
+            });
         }
 
         // Initialize the diagram
@@ -1619,11 +1665,43 @@
                 targetY = target.y0 + (target.y1 - target.y0) / 2;
             }
             
-            // Calculate widths
-            const minWidth = 2;
-            const maxWidth = 20;
-            const sourceWidth = Math.max(minWidth, Math.min(maxWidth, d.width || d.value * 0.2));
-            const targetWidth = sourceWidth; // For now, keep same width, but this can be adjusted
+            // Calculate widths - prioritize user-defined width over calculated value
+            let sourceWidth, targetWidth;
+            
+            // Get source and target IDs to find link data
+            let sourceId, targetId;
+            if (typeof d.source === 'object') {
+                sourceId = d.source.id;
+            } else if (typeof d.source === 'number') {
+                sourceId = sankeyData.nodes[d.source]?.id;
+            } else {
+                sourceId = d.source;
+            }
+            
+            if (typeof d.target === 'object') {
+                targetId = d.target.id;
+            } else if (typeof d.target === 'number') {
+                targetId = sankeyData.nodes[d.target]?.id;
+            } else {
+                targetId = d.target;
+            }
+            
+            // Find matching link in original data to get user-defined width
+            const linkData = sankeyData.links.find(link => 
+                link.source === sourceId && link.target === targetId
+            );
+            
+            if (linkData && linkData.width !== undefined) {
+                // Use user-defined width
+                sourceWidth = Math.max(1, Math.min(50, linkData.width)); // Constrain between 1-50
+                targetWidth = sourceWidth;
+            } else {
+                // Fallback to calculated width based on value
+                const minWidth = 2;
+                const maxWidth = 20;
+                sourceWidth = Math.max(minWidth, Math.min(maxWidth, d.width || d.value * 0.2));
+                targetWidth = sourceWidth;
+            }
             
             // Control points for smooth curve
             const curvature = 0.5;
