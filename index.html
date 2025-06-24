@@ -949,6 +949,16 @@
                         <small style="color: #666; font-size: 11px; margin-top: 2px; display: block;">링크 두께 (1-50px) ${link.width ? '' : '- 자동 계산됨'}</small>
                     </div>
                     <div class="field-group">
+                        <label>Source Y Offset</label>
+                        <input type="number" min="-30" max="30" value="${link.sourceYOffset || 0}" onchange="updateLinkProperty(${index}, 'sourceYOffset', parseFloat(this.value))">
+                        <small style="color: #666; font-size: 11px; margin-top: 2px; display: block;">시작점 Y 오프셋 (-30 ~ +30px)</small>
+                    </div>
+                    <div class="field-group">
+                        <label>Target Y Offset</label>
+                        <input type="number" min="-30" max="30" value="${link.targetYOffset || 0}" onchange="updateLinkProperty(${index}, 'targetYOffset', parseFloat(this.value))">
+                        <small style="color: #666; font-size: 11px; margin-top: 2px; display: block;">끝점 Y 오프셋 (-30 ~ +30px)</small>
+                    </div>
+                    <div class="field-group">
                         <label>Color</label>
                         <input type="color" value="${link.color || '#4a90e2'}" onchange="updateLinkProperty(${index}, 'color', this.value)">
                         <small style="color: #666; font-size: 11px; margin-top: 2px; display: block;">기본색 (그래디언트가 없을 때 사용)</small>
@@ -1001,6 +1011,8 @@
                 target: sankeyData.nodes[1].id,
                 value: 1,
                 width: 5,  // Default width
+                sourceYOffset: 0,  // Default source Y offset
+                targetYOffset: 0,  // Default target Y offset
                 color: '#4a90e2',
                 visible: true,
                 description: 'New link description',
@@ -1641,6 +1653,32 @@
             const sourceNodeData = sankeyData.nodes.find(node => node.id === source.id);
             const targetNodeData = sankeyData.nodes.find(node => node.id === target.id);
             
+            // Find matching link in original data to get Y offsets
+            let linkSourceId, linkTargetId;
+            if (typeof d.source === 'object') {
+                linkSourceId = d.source.id;
+            } else if (typeof d.source === 'number') {
+                linkSourceId = sankeyData.nodes[d.source]?.id;
+            } else {
+                linkSourceId = d.source;
+            }
+            
+            if (typeof d.target === 'object') {
+                linkTargetId = d.target.id;
+            } else if (typeof d.target === 'number') {
+                linkTargetId = sankeyData.nodes[d.target]?.id;
+            } else {
+                linkTargetId = d.target;
+            }
+            
+            const offsetLinkData = sankeyData.links.find(link => 
+                link.source === linkSourceId && link.target === linkTargetId
+            );
+            
+            // Get Y offsets from link data
+            const sourceYOffset = offsetLinkData?.sourceYOffset || 0;
+            const targetYOffset = offsetLinkData?.targetYOffset || 0;
+            
             // Calculate connection points based on whether circles are hidden
             const nodeRadius = 30;
             let sourceX, sourceY, targetX, targetY;
@@ -1648,21 +1686,21 @@
             if (sourceNodeData && sourceNodeData.hideCircle) {
                 // Connect to center of node when circle is hidden
                 sourceX = source.x0 + (source.x1 - source.x0) / 2;
-                sourceY = source.y0 + (source.y1 - source.y0) / 2;
+                sourceY = source.y0 + (source.y1 - source.y0) / 2 + sourceYOffset;
             } else {
                 // Connect to edge of circle when circle is visible
                 sourceX = source.x1;
-                sourceY = source.y0 + (source.y1 - source.y0) / 2;
+                sourceY = source.y0 + (source.y1 - source.y0) / 2 + sourceYOffset;
             }
             
             if (targetNodeData && targetNodeData.hideCircle) {
                 // Connect to center of node when circle is hidden
                 targetX = target.x0 + (target.x1 - target.x0) / 2;
-                targetY = target.y0 + (target.y1 - target.y0) / 2;
+                targetY = target.y0 + (target.y1 - target.y0) / 2 + targetYOffset;
             } else {
                 // Connect to edge of circle when circle is visible
                 targetX = target.x0;
-                targetY = target.y0 + (target.y1 - target.y0) / 2;
+                targetY = target.y0 + (target.y1 - target.y0) / 2 + targetYOffset;
             }
             
             // Calculate widths - prioritize user-defined width over calculated value
