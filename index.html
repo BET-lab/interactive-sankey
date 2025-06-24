@@ -2044,21 +2044,26 @@
                 }
             });
 
-            // Add labels below circular nodes (adjust position based on whether circle is hidden)
+            // Add labels below circular nodes (adjust position based on whether circle is hidden and icon offset)
             const nodeLabels = nodes.append('text')
                 .attr('class', 'node-label')
-                .attr('x', d => (d.x1 - d.x0) / 2)
+                .attr('x', d => {
+                    const nodeData = sankeyData.nodes.find(node => node.id === d.id);
+                    const iconOffsetX = nodeData && nodeData.iconOffsetX ? nodeData.iconOffsetX : 0;
+                    return (d.x1 - d.x0) / 2 + iconOffsetX;
+                })
                 .attr('y', d => {
                     const nodeData = sankeyData.nodes.find(node => node.id === d.id);
                     const iconSize = nodeData && nodeData.iconSize ? nodeData.iconSize : 24;
+                    const iconOffsetY = nodeData && nodeData.iconOffsetY ? nodeData.iconOffsetY : 0;
                     const isCircleHidden = nodeData && nodeData.hideCircle;
                     
                     if (isCircleHidden) {
-                        // Position label below the icon
-                        return (d.y1 - d.y0) / 2 + (iconSize / 2) + 15;
+                        // Position label below the icon with Y offset applied
+                        return (d.y1 - d.y0) / 2 + (iconSize / 2) + 15 + iconOffsetY;
                     } else {
-                        // Position label below the circle
-                        return (d.y1 - d.y0) / 2 + nodeRadius + 20;
+                        // Position label below the circle with Y offset applied
+                        return (d.y1 - d.y0) / 2 + nodeRadius + 20 + iconOffsetY;
                     }
                 })
                 .attr('text-anchor', 'middle')
@@ -2069,6 +2074,8 @@
             nodeLabels.each(function(d) {
                 const textElement = d3.select(this);
                 const lines = d.name.split('\n'); // Split by newline character
+                const nodeData = sankeyData.nodes.find(node => node.id === d.id);
+                const iconOffsetX = nodeData && nodeData.iconOffsetX ? nodeData.iconOffsetX : 0;
                 
                 if (lines.length === 1) {
                     // Single line - use simple text
@@ -2077,7 +2084,7 @@
                     // Multiple lines - use tspan elements
                     lines.forEach((line, index) => {
                         textElement.append('tspan')
-                            .attr('x', (d.x1 - d.x0) / 2) // Keep x position for each line
+                            .attr('x', (d.x1 - d.x0) / 2 + iconOffsetX) // Apply X offset to each line
                             .attr('dy', index === 0 ? 0 : '1.2em') // First line no offset, others 1.2em down
                             .text(line);
                     });
