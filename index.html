@@ -499,7 +499,7 @@
         }
 
         .link {
-            opacity: 0.7;
+            opacity: 1.0;  /* Fixed to 1.0 (no transparency) */
             transition: opacity 0.3s ease;
         }
 
@@ -518,11 +518,11 @@
                 opacity: 0;
             }
             10% {
-                opacity: 0.7;
+                opacity: 1.0;  /* Fixed to 1.0 (no transparency) */
             }
             100% {
                 clip-path: inset(0 0 0 0);
-                opacity: 0.7;
+                opacity: 1.0;  /* Fixed to 1.0 (no transparency) */
             }
         }
 
@@ -585,7 +585,8 @@
         }
 
         .links path {
-            mix-blend-mode: multiply;
+            /* mix-blend-mode: multiply; */  /* Disabled - causes overlapping links to appear darker */
+            mix-blend-mode: normal;  /* Use normal blending to prevent transparency effects */
         }
 
         @media (max-width: 768px) {
@@ -646,9 +647,10 @@
                         <label for="nodeColor">Node Color</label>
                         <input type="color" id="nodeColor" value="#4a90e2">
                     </div>
-                    <div class="control-item">
+                    <!-- Link Opacity feature disabled (always 1.0) -->
+                    <div class="control-item" style="display: none;">
                         <label for="linkOpacity">Link Opacity</label>
-                        <input type="range" id="linkOpacity" min="0.1" max="1" step="0.1" value="0.7">
+                        <input type="range" id="linkOpacity" min="0.1" max="1" step="0.1" value="1.0">
                     </div>
                     <div class="control-item">
                         <label for="animationSpeed">Animation Speed</label>
@@ -691,7 +693,7 @@
     <script>
         // Configuration
         const config = {
-            linkOpacity: 0.7,
+            linkOpacity: 1.0,  // Fixed to 1.0 (no transparency)
             nodeColor: '#4a90e2',
             animationDuration: 500,
             useAbsoluteCoordinates: true  // New: Enable absolute coordinate mode
@@ -734,8 +736,10 @@
                 updateNodeColors();
             });
 
+            // Link opacity disabled - always use 1.0
             document.getElementById('linkOpacity').addEventListener('input', function(e) {
-                config.linkOpacity = parseFloat(e.target.value);
+                // config.linkOpacity = parseFloat(e.target.value);
+                config.linkOpacity = 1.0;  // Always use 1.0 (no transparency)
                 updateLinkOpacity();
             });
 
@@ -1759,7 +1763,7 @@
                 })
                 .on('mouseout', function(event, d) {
                     if (!isAnimating) {
-                        d3.select(this).attr('opacity', config.linkOpacity);
+                        d3.select(this).attr('opacity', 1.0);  // Fixed opacity to 1.0 (no transparency)
                         // hideTooltip(); // Temporarily disabled
                     }
                 });
@@ -2005,11 +2009,12 @@
                 });
         }
 
-        // Update link opacity
+        // Update link opacity (DISABLED - always uses 1.0 for no transparency)
         function updateLinkOpacity() {
             if (!links) return;
             
-            links.attr('opacity', config.linkOpacity);
+            // Always use opacity 1.0 (completely opaque, no transparency)
+            links.attr('opacity', 1.0);
         }
 
         // Update draggable state of nodes
@@ -2149,7 +2154,7 @@
                         }
                         
                         const isVisible = visibleLinks.has(linkData.id);
-                        const opacity = isVisible ? config.linkOpacity : 0;
+                        const opacity = isVisible ? 1.0 : 0;  // Fixed opacity to 1.0 (no transparency)
                         
                         if (isVisible) {
                             linksVisible++;
@@ -2193,14 +2198,14 @@
                                 // Add drawing animation class after a brief delay
                                 setTimeout(() => {
                                     linkElement
-                                        .style('opacity', config.linkOpacity)
+                                        .style('opacity', 1.0)  // Fixed opacity to 1.0 (no transparency)
                                         .classed('drawing', true);
                                 }, 50);
                             } else {
                                 // For previously visible links, just ensure they're visible without animation
                                 linkElement
                                     .classed('drawing', false)
-                                    .style('opacity', config.linkOpacity)
+                                    .style('opacity', 1.0)  // Fixed opacity to 1.0 (no transparency)
                                     .style('clip-path', 'inset(0 0 0 0)'); // Fully visible
                             }
                         } else {
