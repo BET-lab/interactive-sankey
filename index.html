@@ -850,6 +850,16 @@
                             <label>Icon Size</label>
                             <input type="number" min="12" max="100" value="${node.iconSize || 24}" onchange="updateNodeProperty(${index}, 'iconSize', parseInt(this.value))" step="2">
                         </div>
+                        <div class="field-group">
+                            <label>Icon X Offset</label>
+                            <input type="number" value="${node.iconOffsetX || 0}" onchange="updateNodeProperty(${index}, 'iconOffsetX', parseInt(this.value))" step="1" min="-50" max="50">
+                            <small style="color: #666; font-size: 11px; margin-top: 2px; display: block;">아이콘 수평 위치 조정 (-50 ~ 50)</small>
+                        </div>
+                        <div class="field-group">
+                            <label>Icon Y Offset</label>
+                            <input type="number" value="${node.iconOffsetY || 0}" onchange="updateNodeProperty(${index}, 'iconOffsetY', parseInt(this.value))" step="1" min="-50" max="50">
+                            <small style="color: #666; font-size: 11px; margin-top: 2px; display: block;">아이콘 수직 위치 조정 (-50 ~ 50)</small>
+                        </div>
                     </div>
                     <div class="coordinate-fields">
                         <div class="field-group">
@@ -1869,6 +1879,10 @@
                 const halfSize = iconSize / 2;
                 
                 if (iconContent) {
+                    // Get icon offset values
+                    const iconOffsetX = nodeData && nodeData.iconOffsetX ? nodeData.iconOffsetX : 0;
+                    const iconOffsetY = nodeData && nodeData.iconOffsetY ? nodeData.iconOffsetY : 0;
+                    
                     if (iconContent.includes('<svg')) {
                         // SVG icon - use foreignObject with proper SVG formatting
                         const processedSvg = processSvgForIcon(iconContent, iconSize);
@@ -1876,8 +1890,8 @@
                             .attr('class', 'node-icon node-icon-svg')
                             .attr('width', iconSize)
                             .attr('height', iconSize)
-                            .attr('x', (d.x1 - d.x0) / 2 - halfSize)
-                            .attr('y', (d.y1 - d.y0) / 2 - halfSize)
+                            .attr('x', (d.x1 - d.x0) / 2 - halfSize + iconOffsetX)
+                            .attr('y', (d.y1 - d.y0) / 2 - halfSize + iconOffsetY)
                             .style('overflow', 'visible')
                             .style('pointer-events', 'none')
                             .html(processedSvg);
@@ -1886,8 +1900,8 @@
                         const fontSize = Math.max(12, iconSize * 0.75); // Scale font size with icon size
                         nodeElement.append('text')
                             .attr('class', 'node-icon node-icon-text')
-                            .attr('x', (d.x1 - d.x0) / 2)
-                            .attr('y', (d.y1 - d.y0) / 2)
+                            .attr('x', (d.x1 - d.x0) / 2 + iconOffsetX)
+                            .attr('y', (d.y1 - d.y0) / 2 + iconOffsetY)
                             .attr('text-anchor', 'middle')
                             .attr('dominant-baseline', 'central')
                             .style('font-size', `${fontSize}px`)
@@ -1898,12 +1912,16 @@
                     }
                 } else if (!nodeData || !nodeData.hideCircle) {
                     // Default icon if no icon specified and circle is visible
+                    // Get icon offset values
+                    const iconOffsetX = nodeData && nodeData.iconOffsetX ? nodeData.iconOffsetX : 0;
+                    const iconOffsetY = nodeData && nodeData.iconOffsetY ? nodeData.iconOffsetY : 0;
+                    
                     nodeElement.append('foreignObject')
                         .attr('class', 'node-icon node-icon-default')
                         .attr('width', iconSize)
                         .attr('height', iconSize)
-                        .attr('x', (d.x1 - d.x0) / 2 - halfSize)
-                        .attr('y', (d.y1 - d.y0) / 2 - halfSize)
+                        .attr('x', (d.x1 - d.x0) / 2 - halfSize + iconOffsetX)
+                        .attr('y', (d.y1 - d.y0) / 2 - halfSize + iconOffsetY)
                         .style('overflow', 'visible')
                         .style('pointer-events', 'none')
                         .html(`<svg viewBox="0 0 24 24" width="${iconSize}" height="${iconSize}" style="display: block;"><circle cx="12" cy="12" r="8" fill="white"/></svg>`);
