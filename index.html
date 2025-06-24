@@ -1556,10 +1556,17 @@
 
                 console.log('Gradient colors for', link.id, ':', gradientData.start, '->', gradientData.end);
 
+                // First stop: start color at 0%
                 gradient.append('stop')
                     .attr('offset', '0%')
                     .attr('stop-color', gradientData.start);
 
+                // Second stop: maintain start color until 20%
+                gradient.append('stop')
+                    .attr('offset', '30%')
+                    .attr('stop-color', gradientData.start);
+
+                // Third stop: end color at 100%
                 gradient.append('stop')
                     .attr('offset', '100%')
                     .attr('stop-color', gradientData.end);
