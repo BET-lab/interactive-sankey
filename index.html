@@ -106,6 +106,9 @@
             flex: none;
             width: 90vw;
             height: 90vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         /* Mode Toggle Indicator */
@@ -478,6 +481,9 @@
             overflow: auto;
             position: relative;
             max-height: calc(100vh - 200px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         #sankey-diagram {
@@ -757,6 +763,14 @@
                         </small>
                     </div>
                     <div class="control-item">
+                        <label for="svgScale">Scale (%)</label>
+                        <input type="range" id="svgScale" min="25" max="200" step="5" value="100">
+                        <input type="number" id="svgScaleValue" min="25" max="200" step="5" value="100" style="width: 60px; margin-left: 8px;">
+                        <small style="color: rgba(0,0,0,0.6); font-size: 0.8rem; margin-top: 2px;">
+                            Scale diagram (25%-200%)
+                        </small>
+                    </div>
+                    <div class="control-item">
                         <label>
                             <input type="checkbox" id="coordinateMode" checked>
                             Use Absolute Coordinates
@@ -795,7 +809,8 @@
             useAbsoluteCoordinates: true,  // New: Enable absolute coordinate mode
             backgroundColor: '#ffffff',    // Default background color
             svgWidth: 1200,               // Default SVG width
-            svgHeight: 800                // Default SVG height
+            svgHeight: 800,               // Default SVG height
+            svgScale: 100                 // Default SVG scale (100%)
         };
 
         // Animation state
@@ -939,6 +954,21 @@
                 config.svgHeight = parseInt(e.target.value);
                 updateSvgDimensions();
                 updateDiagram();
+            });
+
+            // Scale controls (슬라이더와 숫자 입력 동기화)
+            document.getElementById('svgScale').addEventListener('input', function(e) {
+                const scaleValue = parseInt(e.target.value);
+                config.svgScale = scaleValue;
+                document.getElementById('svgScaleValue').value = scaleValue;
+                updateSvgScale();
+            });
+
+            document.getElementById('svgScaleValue').addEventListener('input', function(e) {
+                const scaleValue = parseInt(e.target.value);
+                config.svgScale = scaleValue;
+                document.getElementById('svgScale').value = scaleValue;
+                updateSvgScale();
             });
         }
 
@@ -1633,7 +1663,8 @@
                 sankeyData.visualization = {
                     backgroundColor: config.backgroundColor,
                     svgWidth: config.svgWidth,
-                    svgHeight: config.svgHeight
+                    svgHeight: config.svgHeight,
+                    svgScale: config.svgScale
                 };
                 console.log('Initialized visualization settings with defaults:', sankeyData.visualization);
             } else {
@@ -1641,6 +1672,7 @@
                 config.backgroundColor = sankeyData.visualization.backgroundColor || config.backgroundColor;
                 config.svgWidth = sankeyData.visualization.svgWidth || config.svgWidth;
                 config.svgHeight = sankeyData.visualization.svgHeight || config.svgHeight;
+                config.svgScale = sankeyData.visualization.svgScale || config.svgScale;
                 console.log('Loaded visualization settings:', sankeyData.visualization);
             }
         }
@@ -1650,9 +1682,12 @@
             document.getElementById('backgroundColor').value = config.backgroundColor;
             document.getElementById('svgWidth').value = config.svgWidth;
             document.getElementById('svgHeight').value = config.svgHeight;
+            document.getElementById('svgScale').value = config.svgScale;
+            document.getElementById('svgScaleValue').value = config.svgScale;
             
-            // Apply background color
+            // Apply all visual settings
             updateBackgroundColor();
+            updateSvgScale();
         }
 
         // Update background color
@@ -1679,6 +1714,21 @@
             sankeyData.visualization.svgHeight = config.svgHeight;
         }
 
+        // Update SVG scale
+        function updateSvgScale() {
+            if (svg) {
+                const scale = config.svgScale / 100; // Convert percentage to decimal
+                svg.style('transform', `scale(${scale})`)
+                   .style('transform-origin', 'center center');
+            }
+            
+            // Update sankeyData to persist changes
+            if (!sankeyData.visualization) {
+                sankeyData.visualization = {};
+            }
+            sankeyData.visualization.svgScale = config.svgScale;
+        }
+
         // Initialize the diagram
         function initializeDiagram() {
             const container = document.getElementById('sankey-diagram');
@@ -1700,7 +1750,9 @@
                 .append('svg')
                 .attr('width', width + margin.left + margin.right)
                 .attr('height', height + margin.top + margin.bottom)
-                .style('background-color', config.backgroundColor);
+                .style('background-color', config.backgroundColor)
+                .style('transform', `scale(${config.svgScale / 100})`)
+                .style('transform-origin', 'center center');
 
             const g = svg.append('g')
                 .attr('transform', `translate(${margin.left},${margin.top})`);
